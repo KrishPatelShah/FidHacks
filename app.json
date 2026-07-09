@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "name": "Financial Garden",
+    "slug": "financial-garden",
+    "scheme": "financialgarden",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": ["**/*"],
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": false
+    }
+  }
+}

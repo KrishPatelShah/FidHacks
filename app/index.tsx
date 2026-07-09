@@ -2,6 +2,7 @@ import { Link } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { SunflowerCompanion } from "@/components/SunflowerCompanion";
+import { colors } from "@/theme/colors";
 
 export default function WelcomeScreen() {
   return (
@@ -27,7 +28,7 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     justifyContent: "space-between",
-    backgroundColor: "#f8efd2",
+    backgroundColor: colors.cream,
     padding: 24,
     paddingTop: 96,
     paddingBottom: 48
@@ -37,13 +38,13 @@ const styles = StyleSheet.create({
     gap: 18
   },
   name: {
-    color: "#234330",
+    color: colors.darkText,
     fontSize: 38,
     fontWeight: "900",
     textAlign: "center"
   },
   tagline: {
-    color: "#5f6f52",
+    color: colors.mutedText,
     fontSize: 18,
     lineHeight: 26,
     textAlign: "center"
@@ -52,7 +53,7 @@ const styles = StyleSheet.create({
     gap: 16
   },
   login: {
-    color: "#234330",
+    color: colors.deepGreen,
     fontSize: 16,
     fontWeight: "700",
     textAlign: "center"

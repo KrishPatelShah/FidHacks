@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import { PrimaryButton } from "@/components/PrimaryButton";
+import { colors, shadow } from "@/theme/colors";
 
 export default function AuthScreen() {
   return (
@@ -18,27 +19,29 @@ export default function AuthScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#fffaf0",
+    backgroundColor: colors.cream,
     gap: 16,
     justifyContent: "center",
     padding: 24
   },
   title: {
-    color: "#234330",
+    color: colors.darkText,
     fontSize: 32,
     fontWeight: "900"
   },
   copy: {
-    color: "#65735f",
+    color: colors.mutedText,
     fontSize: 16,
     lineHeight: 23
   },
   input: {
-    backgroundColor: "#ffffff",
-    borderColor: "#d9c99a",
-    borderRadius: 18,
+    backgroundColor: colors.card,
+    borderColor: colors.line,
+    borderRadius: 22,
     borderWidth: 1,
+    color: colors.darkText,
     fontSize: 16,
-    padding: 16
+    padding: 16,
+    ...shadow
   }
 });

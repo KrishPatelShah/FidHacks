@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-nati
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { questionnaireCategories } from "@/data/questionnaire";
 import { recommendPath } from "@/lib/recommendPath";
+import { colors, shadow } from "@/theme/colors";
 
 export default function QuestionnaireScreen() {
   const [ratings, setRatings] = useState<Record<string, number>>({});
@@ -41,35 +42,36 @@ export default function QuestionnaireScreen() {
 
 const styles = StyleSheet.create({
   screen: {
-    backgroundColor: "#fffaf0",
+    backgroundColor: colors.cream,
     gap: 16,
     padding: 24,
     paddingTop: 72
   },
   title: {
-    color: "#234330",
+    color: colors.darkText,
     fontSize: 30,
     fontWeight: "900"
   },
   copy: {
-    color: "#65735f",
+    color: colors.mutedText,
     fontSize: 16,
     lineHeight: 23
   },
   card: {
-    backgroundColor: "#ffffff",
-    borderRadius: 22,
+    backgroundColor: colors.card,
+    borderRadius: 26,
     gap: 12,
-    padding: 18
+    padding: 18,
+    ...shadow
   },
   flower: {
-    color: "#a56620",
+    color: colors.deepGreen,
     fontSize: 14,
     fontWeight: "800",
     textTransform: "uppercase"
   },
   question: {
-    color: "#234330",
+    color: colors.darkText,
     fontSize: 17,
     fontWeight: "700",
     lineHeight: 24
@@ -80,35 +82,35 @@ const styles = StyleSheet.create({
   },
   rating: {
     alignItems: "center",
-    backgroundColor: "#f4ead0",
+    backgroundColor: "#FFFFFF",
     borderRadius: 14,
     height: 44,
     justifyContent: "center",
     width: 44
   },
   ratingSelected: {
-    backgroundColor: "#234330"
+    backgroundColor: colors.deepGreen
   },
   ratingText: {
-    color: "#234330",
+    color: colors.darkText,
     fontWeight: "900"
   },
   ratingTextSelected: {
     color: "#ffffff"
   },
   recommendation: {
-    backgroundColor: "#e4f0dc",
-    borderRadius: 22,
+    backgroundColor: "#E8F7F0",
+    borderRadius: 24,
     padding: 18
   },
   recommendationLabel: {
-    color: "#65735f",
+    color: colors.mutedText,
     fontSize: 13,
     fontWeight: "800",
     textTransform: "uppercase"
   },
   recommendationValue: {
-    color: "#234330",
+    color: colors.deepGreen,
     fontSize: 24,
     fontWeight: "900",
     textTransform: "capitalize"

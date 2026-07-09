@@ -4,10 +4,10 @@ export type GardenAction = "complete_lesson" | "pass_quiz" | "log_budget" | "com
 
 export function applyGardenReward(plant: Plant, action: GardenAction): Plant {
   const reward = {
-    complete_lesson: { sunlight: 1, growth: 10 },
-    pass_quiz: { water: 1, growth: 18 },
-    log_budget: { fertilizer: 1, growth: 14 },
-    complete_weekly_challenge: { sunlight: 1, water: 1, fertilizer: 1, growth: 25 },
+    complete_lesson: { sunlight: 1, growth: 20 },
+    pass_quiz: { water: 1, growth: 40 },
+    log_budget: { fertilizer: 1, growth: 25 },
+    complete_weekly_challenge: { sunlight: 1, water: 1, fertilizer: 1, growth: 45 },
     finish_module: { growth: 100 }
   }[action];
 

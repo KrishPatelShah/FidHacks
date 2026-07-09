@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { FloatingSunflower } from "@/components/FloatingSunflower";
 import { GardenPreview } from "@/components/GardenPreview";
 import { demoCommunityPosts, demoFriendGardens } from "@/data/community";
 import { demoPlants } from "@/data/plants";
@@ -52,8 +51,6 @@ export default function CommunityScreen() {
           ))}
         </View>
       )}
-
-      <FloatingSunflower message="Celebrate a milestone?" />
     </ScrollView>
   );
 }

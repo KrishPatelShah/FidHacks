@@ -1,6 +1,5 @@
 import { Link } from "expo-router";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { FloatingSunflower } from "@/components/FloatingSunflower";
 import { FlowerIcon } from "@/components/FlowerIcon";
 import { learningModules } from "@/data/lessons";
 import { colors, shadow } from "@/theme/colors";
@@ -98,8 +97,6 @@ export default function LearningPathScreen() {
           </Link>
         );
       })}
-
-      <FloatingSunflower message="Ready to grow a Daisy?" />
     </ScrollView>
   );
 }

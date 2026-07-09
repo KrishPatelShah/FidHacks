@@ -1,15 +1,29 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Link, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
+import { useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { FlowerIcon } from "@/components/FlowerIcon";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { Term } from "@/components/Term";
 import { findLesson } from "@/data/lessons";
+import { useGarden } from "@/state/garden";
 import { colors, shadow } from "@/theme/colors";
 
 export default function LessonScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { completeLesson } = useGarden();
+  const [completed, setCompleted] = useState(false);
   const lesson = findLesson(id);
+
+  function handleTakeQuiz() {
+    if (lesson && !completed) {
+      completeLesson(lesson.category);
+      setCompleted(true);
+    }
+    if (lesson) {
+      router.push(`/quiz/${lesson.id}`);
+    }
+  }
 
   if (!lesson) {
     return (
@@ -56,14 +70,12 @@ export default function LessonScreen() {
       <View style={styles.rewardCard}>
         <Ionicons color={colors.sunflowerYellow} name="sparkles" size={22} />
         <View style={styles.rewardText}>
-          <Text style={styles.rewardTitle}>Complete lesson = sunlight</Text>
+          <Text style={styles.rewardTitle}>{completed ? "Lesson complete: +Sunlight earned" : "Complete lesson = sunlight"}</Text>
           <Text style={styles.rewardCopy}>Pass the quiz next to earn water and grow this flower category.</Text>
         </View>
       </View>
 
-      <Link href={`/quiz/${lesson.id}`} asChild>
-        <PrimaryButton label="Take Quiz" />
-      </Link>
+      <PrimaryButton label="Take Quiz" onPress={handleTakeQuiz} />
     </ScrollView>
   );
 }

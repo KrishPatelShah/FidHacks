@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import Svg, { Circle, Ellipse, Line, Path, Rect, Text as SvgText } from "react-native-svg";
+import Svg, { Circle, Ellipse, G, Line, Path, Rect, Text as SvgText } from "react-native-svg";
 import { colors, shadow } from "@/theme/colors";
 import { Plant } from "@/types/domain";
 
@@ -16,23 +16,23 @@ const petalColors: Record<string, string> = {
 };
 
 const positions = [
-  [70, 150],
-  [120, 126],
-  [176, 142],
-  [225, 118],
-  [270, 148],
-  [96, 91],
-  [156, 84],
-  [236, 85],
-  [302, 105],
-  [44, 108]
+  [62, 214],
+  [132, 222],
+  [204, 216],
+  [276, 222],
+  [318, 200],
+  [96, 176],
+  [168, 182],
+  [240, 178],
+  [300, 168],
+  [44, 190]
 ];
 
 function Flower({ x, y, color, index }: { x: number; y: number; color: string; index: number }) {
   const center = index % 3 === 0 ? colors.sunflowerYellow : "#8B5A28";
 
   return (
-    <Svg x={x - 22} y={y - 58} width={54} height={76} viewBox="0 0 54 76">
+    <G transform={`translate(${x - 27}, ${y - 58})`}>
       <Line x1="27" y1="31" x2="27" y2="71" stroke={colors.deepGreen} strokeWidth="5" strokeLinecap="round" />
       <Path d="M26 56 C17 48 10 51 8 60 C17 64 23 63 26 56Z" fill={colors.mintGreen} />
       <Path d="M29 58 C39 49 46 52 48 61 C39 65 33 64 29 58Z" fill="#7CD8B8" />
@@ -41,7 +41,7 @@ function Flower({ x, y, color, index }: { x: number; y: number; color: string; i
       <Ellipse cx="27" cy="16" rx="10" ry="13" fill={color} />
       <Ellipse cx="27" cy="40" rx="10" ry="13" fill={color} />
       <Circle cx="27" cy="29" r="8" fill={center} />
-    </Svg>
+    </G>
   );
 }
 

@@ -1,17 +1,37 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { FlowerIcon } from "@/components/FlowerIcon";
 import { PrimaryButton } from "@/components/PrimaryButton";
+import { findLesson } from "@/data/lessons";
 import { quizQuestions } from "@/data/quizzes";
+import { GrowthResult, useGarden } from "@/state/garden";
 import { colors, shadow } from "@/theme/colors";
 
 export default function QuizScreen() {
   const { lessonId } = useLocalSearchParams<{ lessonId: string }>();
+  const { passQuiz } = useGarden();
   const questions = quizQuestions[lessonId] ?? quizQuestions.default;
   const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [result, setResult] = useState<GrowthResult | null>(null);
+  const awarded = useRef(false);
   const passed = questions.every((question) => answers[question.id] === question.correctIndex);
+  const category = findLesson(lessonId)?.category ?? "budgeting";
+  const rewardFlower = findLesson(lessonId)?.category === "credit_debt" ? "Rose" : "Daisy";
+
+  useEffect(() => {
+    if (passed && !awarded.current) {
+      awarded.current = true;
+      setResult(passQuiz(category));
+    }
+  }, [passed, passQuiz, category]);
+
+  function retry() {
+    awarded.current = false;
+    setResult(null);
+    setAnswers({});
+  }
 
   return (
     <ScrollView contentContainerStyle={styles.screen}>
@@ -49,14 +69,24 @@ export default function QuizScreen() {
       })}
 
       <View style={styles.reward}>
-        <FlowerIcon name={passed ? "Daisy" : "Sunflower"} size={54} />
+        <FlowerIcon name={passed ? rewardFlower : "Sunflower"} size={54} />
         <View style={styles.rewardText}>
-          <Text style={styles.rewardTitle}>{passed ? "Passed: +Water earned" : "Pass to earn water"}</Text>
-          <Text style={styles.rewardCopy}>Passing this quiz grows flower count instead of rewarding dollar amounts.</Text>
+          <Text style={styles.rewardTitle}>
+            {result?.earnedFlower
+              ? `New ${result.flowerName} grown!`
+              : passed
+                ? "Passed: +Water earned"
+                : "Pass to earn water"}
+          </Text>
+          <Text style={styles.rewardCopy}>
+            {result?.earnedFlower
+              ? `You now have ${result.quantity} ${result.flowerName}s in your garden.`
+              : "Passing this quiz grows flower count instead of rewarding dollar amounts."}
+          </Text>
         </View>
       </View>
 
-      <PrimaryButton label={passed ? "Return to Garden" : "Retry Quiz"} onPress={() => (passed ? router.replace("/(tabs)/garden") : setAnswers({}))} />
+      <PrimaryButton label={passed ? "Return to Garden" : "Retry Quiz"} onPress={() => (passed ? router.replace("/(tabs)/garden") : retry())} />
     </ScrollView>
   );
 }

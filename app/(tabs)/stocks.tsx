@@ -1,5 +1,5 @@
+import { Link } from "expo-router";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { FloatingSunflower } from "@/components/FloatingSunflower";
 import { FlowerIcon } from "@/components/FlowerIcon";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { colors, shadow } from "@/theme/colors";
@@ -52,8 +52,9 @@ export default function StocksScreen() {
         <Text style={styles.disclaimerCopy}>Sunflower explains investing concepts, but does not give personal investment advice.</Text>
       </View>
 
-      <PrimaryButton label="Ask Sunflower about stocks vs. bonds" />
-      <FloatingSunflower message="Stocks vs. bonds?" />
+      <Link href="/sunflower" asChild>
+        <PrimaryButton label="Ask Sunflower about stocks vs. bonds" />
+      </Link>
     </ScrollView>
   );
 }

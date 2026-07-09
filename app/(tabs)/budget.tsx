@@ -3,9 +3,9 @@ import { Link } from "expo-router";
 import { useState } from "react";
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { PieChart } from "react-native-gifted-charts";
-import { FloatingSunflower } from "@/components/FloatingSunflower";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { budgetCategories, sampleBudgetEntries } from "@/data/budget";
+import { useGarden } from "@/state/garden";
 import { colors, shadow } from "@/theme/colors";
 import { BudgetCategory } from "@/types/domain";
 
@@ -22,8 +22,15 @@ const icons: Record<BudgetCategory, keyof typeof Ionicons.glyphMap> = {
 };
 
 export default function BudgetScreen() {
+  const { logBudget } = useGarden();
   const [mode, setMode] = useState<Mode>("expected");
   const [entries, setEntries] = useState(sampleBudgetEntries);
+  const [saved, setSaved] = useState(false);
+
+  function handleSave() {
+    logBudget();
+    setSaved(true);
+  }
   const total = entries.reduce((sum, entry) => sum + entry.expectedAmount, 0);
   const chartData = entries.map((entry, index) => {
     const value = mode === "expected" ? entry.expectedAmount : mode === "current" ? entry.actualAmount : Math.abs(entry.actualAmount - entry.expectedAmount);
@@ -121,8 +128,14 @@ export default function BudgetScreen() {
         );
       })}
 
-      <PrimaryButton label="Save Budget" />
-      <FloatingSunflower message="Your budget changed this week." />
+      {saved ? (
+        <View style={styles.savedCard}>
+          <Ionicons color={colors.deepGreen} name="checkmark-circle" size={20} />
+          <Text style={styles.savedText}>Budget logged. Your Daisy earned fertilizer and grew.</Text>
+        </View>
+      ) : null}
+
+      <PrimaryButton label={saved ? "Log Budget Again (+Fertilizer)" : "Save Budget"} onPress={handleSave} />
     </ScrollView>
   );
 }
@@ -288,5 +301,20 @@ const styles = StyleSheet.create({
   difference: {
     color: colors.deepGreen,
     fontWeight: "900"
+  },
+  savedCard: {
+    alignItems: "center",
+    backgroundColor: "#E8F7F0",
+    borderRadius: 20,
+    flexDirection: "row",
+    gap: 10,
+    padding: 14
+  },
+  savedText: {
+    color: colors.darkText,
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "700",
+    lineHeight: 20
   }
 });

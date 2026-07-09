@@ -1,11 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { FloatingSunflower } from "@/components/FloatingSunflower";
 import { GardenPreview } from "@/components/GardenPreview";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { ResourcePill } from "@/components/ResourcePill";
-import { demoPlants } from "@/data/plants";
+import { useGarden } from "@/state/garden";
 import { colors, shadow } from "@/theme/colors";
 
 const actionCards = [
@@ -27,21 +26,14 @@ const actionCards = [
 ];
 
 export default function GardenDashboardScreen() {
-  const totals = demoPlants.reduce(
-    (sum, plant) => ({
-      sunlight: sum.sunlight + plant.sunlight,
-      water: sum.water + plant.water,
-      fertilizer: sum.fertilizer + plant.fertilizer
-    }),
-    { sunlight: 0, water: 0, fertilizer: 0 }
-  );
+  const { plants, totals, streak, totalFlowers } = useGarden();
 
   return (
     <ScrollView contentContainerStyle={styles.screen}>
       <View style={styles.topBar}>
         <View style={styles.streak}>
           <Ionicons color={colors.softOrange} name="leaf" size={18} />
-          <Text style={styles.streakText}>7 Day Streak</Text>
+          <Text style={styles.streakText}>{streak} Day Streak</Text>
         </View>
         <Link href="/(tabs)/profile" style={styles.avatar}>
           <Text style={styles.avatarText}>DG</Text>
@@ -59,7 +51,14 @@ export default function GardenDashboardScreen() {
         <ResourcePill label="Fertilizer" value={totals.fertilizer} />
       </View>
 
-      <GardenPreview plants={demoPlants} />
+      <GardenPreview plants={plants} />
+
+      <View style={styles.growthBanner}>
+        <Ionicons color={colors.deepGreen} name="sparkles" size={18} />
+        <Text style={styles.growthText}>
+          You've grown {totalFlowers} flowers. Complete lessons and quizzes to grow more.
+        </Text>
+      </View>
 
       <View style={styles.actionStack}>
         {actionCards.map((card) => (
@@ -81,8 +80,6 @@ export default function GardenDashboardScreen() {
           <PrimaryButton label="Ask Sunflower" variant="secondary" />
         </Link>
       </View>
-
-      <FloatingSunflower message="Want a quick task?" />
     </ScrollView>
   );
 }
@@ -152,6 +149,21 @@ const styles = StyleSheet.create({
   resources: {
     flexDirection: "row",
     gap: 8
+  },
+  growthBanner: {
+    alignItems: "center",
+    backgroundColor: "#E8F7F0",
+    borderRadius: 20,
+    flexDirection: "row",
+    gap: 10,
+    padding: 14
+  },
+  growthText: {
+    color: colors.darkText,
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "700",
+    lineHeight: 20
   },
   actionStack: {
     gap: 12

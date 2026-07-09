@@ -1,9 +1,11 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { FlowerIcon } from "@/components/FlowerIcon";
-import { demoPlants } from "@/data/plants";
+import { useGarden } from "@/state/garden";
 import { colors, shadow } from "@/theme/colors";
 
 export default function ProfileScreen() {
+  const { plants, streak, totalFlowers, lessonsCompleted, quizzesPassed, resetGarden } = useGarden();
+
   return (
     <ScrollView contentContainerStyle={styles.screen}>
       <View style={styles.header}>
@@ -18,23 +20,23 @@ export default function ProfileScreen() {
 
       <View style={styles.stats}>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>7</Text>
+          <Text style={styles.statValue}>{streak}</Text>
           <Text style={styles.statLabel}>Day streak</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>82%</Text>
-          <Text style={styles.statLabel}>Quiz accuracy</Text>
+          <Text style={styles.statValue}>{totalFlowers}</Text>
+          <Text style={styles.statLabel}>Flowers grown</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>6</Text>
-          <Text style={styles.statLabel}>Badges</Text>
+          <Text style={styles.statValue}>{lessonsCompleted + quizzesPassed}</Text>
+          <Text style={styles.statLabel}>Actions done</Text>
         </View>
       </View>
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Flower Collection</Text>
         <View style={styles.flowerGrid}>
-          {demoPlants.map((plant) => (
+          {plants.map((plant) => (
             <View key={plant.id} style={styles.flowerBadge}>
               <FlowerIcon name={plant.flowerName} size={42} />
               <Text style={styles.flowerText}>{plant.quantity} {plant.flowerName}</Text>
@@ -66,6 +68,10 @@ export default function ProfileScreen() {
         <Text style={styles.cardTitle}>Streaks without punishment</Text>
         <Text style={styles.copy}>Missing a day pauses growth. It never kills the garden or resets learning progress.</Text>
       </View>
+
+      <TouchableOpacity onPress={resetGarden} style={styles.reset}>
+        <Text style={styles.resetText}>Reset Garden (demo)</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -75,7 +81,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cream,
     gap: 16,
     padding: 20,
-    paddingBottom: 40,
+    paddingBottom: 120,
     paddingTop: 64
   },
   header: {
@@ -206,5 +212,17 @@ const styles = StyleSheet.create({
     color: colors.mutedText,
     fontSize: 15,
     lineHeight: 22
+  },
+  reset: {
+    alignItems: "center",
+    borderColor: colors.line,
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 14
+  },
+  resetText: {
+    color: colors.mutedText,
+    fontSize: 14,
+    fontWeight: "800"
   }
 });

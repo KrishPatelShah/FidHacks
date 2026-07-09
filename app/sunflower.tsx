@@ -1,132 +1,229 @@
-import { useState } from "react";
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { PrimaryButton } from "@/components/PrimaryButton";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { useRef, useState } from "react";
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SunflowerCompanion } from "@/components/SunflowerCompanion";
 import { askSunflower } from "@/services/ai";
 import { colors, shadow } from "@/theme/colors";
 
-const chips = ["Explain this", "Recommend a lesson", "Why did I overspend?", "What is APR?", "Stocks vs. bonds", "Weekly challenge"];
+type Message = {
+  id: string;
+  role: "user" | "sunflower";
+  text: string;
+};
+
+const chips = ["What is APR?", "Roth IRA?", "Stocks vs. bonds", "Why did I overspend?", "What should I learn next?", "401(k) match"];
+
+let messageId = 0;
+function nextId() {
+  messageId += 1;
+  return `m${messageId}`;
+}
 
 export default function SunflowerScreen() {
-  const [question, setQuestion] = useState("Why did I spend more than expected?");
-  const [answer, setAnswer] = useState(askSunflower(question));
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: nextId(),
+      role: "sunflower",
+      text: "Hi, I'm your Sunflower tutor. Ask me anything about money basics — budgeting, credit, saving, retirement, or investing. I explain simply and never give personalized advice."
+    }
+  ]);
+  const [draft, setDraft] = useState("");
+  const scrollRef = useRef<ScrollView>(null);
+  const insets = useSafeAreaInsets();
 
-  function ask(nextQuestion = question) {
-    setQuestion(nextQuestion);
-    setAnswer(askSunflower(nextQuestion));
+  function send(text: string) {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    const userMessage: Message = { id: nextId(), role: "user", text: trimmed };
+    const reply: Message = { id: nextId(), role: "sunflower", text: askSunflower(trimmed) };
+    setMessages((current) => [...current, userMessage, reply]);
+    setDraft("");
+    requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.screen}>
-      <View style={styles.panel}>
-        <SunflowerCompanion size={104} />
-        <Text style={styles.title}>Ask Sunflower</Text>
-        <Text style={styles.copy}>A friendly financial literacy tutor for quick explanations and next-step suggestions.</Text>
-
-        <View style={styles.chips}>
-          {chips.map((chip) => (
-            <TouchableOpacity key={chip} onPress={() => ask(chip)} style={styles.chip}>
-              <Text style={styles.chipText}>{chip}</Text>
-            </TouchableOpacity>
-          ))}
+    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={[styles.screen, { paddingTop: insets.top + 8 }]}>
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
+          <SunflowerCompanion size={44} />
+          <View>
+            <Text style={styles.title}>Sunflower</Text>
+            <Text style={styles.subtitle}>Financial literacy tutor</Text>
+          </View>
         </View>
-
-        <TextInput multiline value={question} onChangeText={setQuestion} style={styles.input} />
-        <PrimaryButton label="Ask Sunflower" onPress={() => ask()} />
-
-        <View style={styles.answer}>
-          <Text style={styles.answerTitle}>Sunflower says</Text>
-          <Text style={styles.answerCopy}>{answer}</Text>
-        </View>
-
-        <Text style={styles.disclaimer}>Sunflower gives educational guidance, not personalized financial, tax, legal, or investment advice.</Text>
+        <Pressable onPress={() => router.back()} style={styles.close} accessibilityLabel="Close chat">
+          <Ionicons color={colors.darkText} name="close" size={22} />
+        </Pressable>
       </View>
-    </ScrollView>
+
+      <ScrollView ref={scrollRef} style={styles.threadScroll} contentContainerStyle={styles.thread} keyboardShouldPersistTaps="handled">
+        {messages.map((message) => (
+          <View
+            key={message.id}
+            style={[styles.bubble, message.role === "user" ? styles.userBubble : styles.botBubble]}
+          >
+            <Text style={message.role === "user" ? styles.userText : styles.botText}>{message.text}</Text>
+          </View>
+        ))}
+      </ScrollView>
+
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScroll} contentContainerStyle={styles.chips}>
+        {chips.map((chip) => (
+          <TouchableOpacity key={chip} onPress={() => send(chip)} style={styles.chip}>
+            <Text style={styles.chipText}>{chip}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      <View style={styles.inputRow}>
+        <TextInput
+          value={draft}
+          onChangeText={setDraft}
+          placeholder="Ask about money basics…"
+          placeholderTextColor={colors.mutedText}
+          style={styles.input}
+          onSubmitEditing={() => send(draft)}
+          returnKeyType="send"
+        />
+        <Pressable onPress={() => send(draft)} style={styles.sendButton} accessibilityLabel="Send message">
+          <Ionicons color={colors.white} name="arrow-up" size={22} />
+        </Pressable>
+      </View>
+
+      <Text style={styles.disclaimer}>Educational guidance only — not personalized financial, tax, legal, or investment advice.</Text>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   screen: {
-    backgroundColor: "rgba(15, 110, 86, 0.18)",
-    flexGrow: 1,
-    justifyContent: "flex-end",
-    padding: 16,
-    paddingTop: 72
-  },
-  panel: {
-    alignItems: "center",
     backgroundColor: colors.cream,
-    borderRadius: 36,
-    gap: 16,
-    padding: 22,
-    ...shadow
+    flex: 1
+  },
+  header: {
+    alignItems: "center",
+    borderBottomColor: colors.line,
+    borderBottomWidth: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingBottom: 12,
+    paddingHorizontal: 18
+  },
+  headerLeft: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 10
   },
   title: {
     color: colors.darkText,
-    fontSize: 32,
+    fontSize: 20,
     fontWeight: "900"
   },
-  copy: {
+  subtitle: {
     color: colors.mutedText,
-    fontSize: 16,
-    lineHeight: 24,
-    textAlign: "center"
+    fontSize: 13,
+    fontWeight: "700"
+  },
+  close: {
+    alignItems: "center",
+    backgroundColor: colors.card,
+    borderRadius: 18,
+    height: 36,
+    justifyContent: "center",
+    width: 36
+  },
+  threadScroll: {
+    flex: 1
+  },
+  thread: {
+    gap: 12,
+    padding: 18
+  },
+  bubble: {
+    borderRadius: 22,
+    maxWidth: "86%",
+    padding: 14
+  },
+  botBubble: {
+    alignSelf: "flex-start",
+    backgroundColor: colors.card,
+    borderBottomLeftRadius: 6,
+    ...shadow
+  },
+  userBubble: {
+    alignSelf: "flex-end",
+    backgroundColor: colors.deepGreen,
+    borderBottomRightRadius: 6
+  },
+  botText: {
+    color: colors.darkText,
+    fontSize: 15,
+    lineHeight: 22
+  },
+  userText: {
+    color: colors.white,
+    fontSize: 15,
+    fontWeight: "600",
+    lineHeight: 22
+  },
+  chipsScroll: {
+    flexGrow: 0
   },
   chips: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+    alignItems: "center",
     gap: 8,
-    justifyContent: "center"
+    paddingHorizontal: 14,
+    paddingVertical: 4
   },
   chip: {
     backgroundColor: colors.card,
     borderColor: colors.line,
     borderRadius: 999,
     borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 8
+    paddingHorizontal: 14,
+    paddingVertical: 9
   },
   chipText: {
     color: colors.deepGreen,
     fontSize: 13,
     fontWeight: "900"
   },
+  inputRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingTop: 10
+  },
   input: {
     backgroundColor: colors.card,
     borderColor: colors.line,
-    borderRadius: 22,
+    borderRadius: 24,
     borderWidth: 1,
     color: colors.darkText,
+    flex: 1,
     fontSize: 16,
-    minHeight: 104,
-    padding: 16,
-    textAlignVertical: "top",
-    width: "100%"
+    paddingHorizontal: 18,
+    paddingVertical: 13
   },
-  answer: {
-    backgroundColor: "#E8F7F0",
+  sendButton: {
+    alignItems: "center",
+    backgroundColor: colors.deepGreen,
     borderRadius: 24,
-    gap: 8,
-    padding: 18,
-    width: "100%"
-  },
-  answerTitle: {
-    color: colors.darkText,
-    fontSize: 18,
-    fontWeight: "900",
-    textAlign: "center"
-  },
-  answerCopy: {
-    color: colors.mutedText,
-    fontSize: 15,
-    lineHeight: 23,
-    textAlign: "center"
+    height: 48,
+    justifyContent: "center",
+    width: 48
   },
   disclaimer: {
     color: colors.mutedText,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "700",
-    lineHeight: 18,
+    lineHeight: 16,
+    paddingBottom: 14,
+    paddingHorizontal: 20,
+    paddingTop: 8,
     textAlign: "center"
   }
 });

@@ -1,5 +1,10 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
+from app.api.deps import get_current_profile
+from app.db.session import get_db
+from app.models.user import Profile
+from app.models.user import QuestionnaireResponse as QuestionnaireResponseModel
 from app.schemas.questionnaire import QuestionnaireCreate, QuestionnaireResponse
 from app.services.path_recommendation import recommend_path
 
@@ -7,5 +12,18 @@ router = APIRouter()
 
 
 @router.post("", response_model=QuestionnaireResponse)
-def create_questionnaire_response(payload: QuestionnaireCreate) -> QuestionnaireResponse:
-    return QuestionnaireResponse(**payload.model_dump(), recommended_path=recommend_path(payload))
+def create_questionnaire_response(
+    payload: QuestionnaireCreate,
+    db: Session = Depends(get_db),
+    current_profile: Profile = Depends(get_current_profile),
+) -> QuestionnaireResponse:
+    recommended_path = recommend_path(payload)
+    db_response = QuestionnaireResponseModel(
+        user_id=current_profile.id,
+        recommended_path=recommended_path,
+        **payload.model_dump(),
+    )
+    db.add(db_response)
+    current_profile.current_path = recommended_path
+    db.commit()
+    return QuestionnaireResponse(**payload.model_dump(), recommended_path=recommended_path)

@@ -19,6 +19,15 @@ Docker Compose starts:
 docker compose up --build
 ```
 
+On startup, the API container runs:
+
+```bash
+alembic upgrade head
+python -m app.db.seed
+```
+
+That creates the schema and loads deterministic demo data before Uvicorn starts.
+
 Health checks:
 
 ```bash
@@ -50,4 +59,26 @@ GET  /api/community/posts
 POST /api/sunflower/ask
 ```
 
-Current routes return demo data while the database layer, migrations, and seed data are wired in.
+Demo authentication:
+
+```bash
+curl -X POST http://localhost:8000/api/auth/demo
+```
+
+Protected routes expect the returned token as:
+
+```text
+Authorization: Bearer demo:<uuid>
+```
+
+## Database Commands
+
+From inside the API container:
+
+```bash
+docker compose exec api alembic upgrade head
+docker compose exec api python -m app.db.seed
+docker compose exec api pytest
+```
+
+From the host, override `DATABASE_URL` so it points at `localhost` instead of the Compose service name `db`.

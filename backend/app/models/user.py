@@ -32,4 +32,5 @@ class QuestionnaireResponse(Base):
     career_taxes_confidence: Mapped[int] = mapped_column(Integer, nullable=False)
     investing_confidence: Mapped[int] = mapped_column(Integer, nullable=False)
     primary_goal: Mapped[str] = mapped_column(String(80), nullable=False)
+    recommended_path: Mapped[str] = mapped_column(String(40), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

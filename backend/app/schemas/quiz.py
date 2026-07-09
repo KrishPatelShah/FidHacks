@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class QuizQuestionRead(BaseModel):
@@ -10,6 +10,8 @@ class QuizQuestionRead(BaseModel):
 
 
 class QuizAttemptCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     answers: dict[str, int]
 
 

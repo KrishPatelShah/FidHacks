@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class PlantRead(BaseModel):
@@ -17,6 +17,8 @@ class PlantRead(BaseModel):
 
 
 class PlantGrowRequest(BaseModel):
-    sunlight: int = 0
-    water: int = 0
-    fertilizer: int = 0
+    model_config = ConfigDict(extra="forbid")
+
+    sunlight: int = Field(default=0, ge=0)
+    water: int = Field(default=0, ge=0)
+    fertilizer: int = Field(default=0, ge=0)

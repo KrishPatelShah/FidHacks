@@ -1,14 +1,14 @@
-from uuid import UUID
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
-from fastapi import APIRouter
-
+from app.api.deps import DEMO_USER_ID, upsert_demo_profile
+from app.db.session import get_db
 from app.schemas.auth import DemoLoginResponse
 
 router = APIRouter()
 
-DEMO_USER_ID = UUID("00000000-0000-0000-0000-000000000001")
-
 
 @router.post("/demo", response_model=DemoLoginResponse)
-def demo_login() -> DemoLoginResponse:
+def demo_login(db: Session = Depends(get_db)) -> DemoLoginResponse:
+    upsert_demo_profile(db)
     return DemoLoginResponse(user_id=DEMO_USER_ID, access_token=f"demo:{DEMO_USER_ID}")

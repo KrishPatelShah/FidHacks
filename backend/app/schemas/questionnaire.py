@@ -1,7 +1,9 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class QuestionnaireCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     budgeting_confidence: int = Field(ge=1, le=5)
     savings_confidence: int = Field(ge=1, le=5)
     credit_debt_confidence: int = Field(ge=1, le=5)

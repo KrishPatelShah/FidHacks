@@ -10,6 +10,7 @@ class LearningModule(Base):
     __tablename__ = "learning_modules"
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    slug: Mapped[str] = mapped_column(String(120), nullable=False, unique=True, index=True)
     category: Mapped[str] = mapped_column(String(60), nullable=False)
     flower_name: Mapped[str] = mapped_column(String(80), nullable=False)
     title: Mapped[str] = mapped_column(String(160), nullable=False)
@@ -20,6 +21,7 @@ class Lesson(Base):
     __tablename__ = "lessons"
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    slug: Mapped[str] = mapped_column(String(120), nullable=False, unique=True, index=True)
     module_id: Mapped[UUID] = mapped_column(ForeignKey("learning_modules.id", ondelete="CASCADE"), nullable=False)
     category: Mapped[str] = mapped_column(String(60), nullable=False)
     title: Mapped[str] = mapped_column(String(160), nullable=False)

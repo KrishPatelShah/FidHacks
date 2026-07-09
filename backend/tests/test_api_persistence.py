@@ -145,7 +145,10 @@ async def test_lessons_and_quizzes_are_available_by_slug(client: AsyncClient) ->
 
     assert modules.status_code == 200
     assert modules.json()[0]["id"] == "module_budgeting"
-    assert modules.json()[0]["lessons"][0]["id"] == "budgeting-expected-actual"
+    assert {lesson["id"] for lesson in modules.json()[0]["lessons"]} == {
+        "budgeting-categories",
+        "budgeting-expected-actual",
+    }
 
     assert lesson.status_code == 200
     assert lesson.json()["id"] == "budgeting-expected-actual"

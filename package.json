@@ -13,6 +13,8 @@
     "@expo/vector-icons": "^14.0.4",
     "@react-native-async-storage/async-storage": "1.23.1",
     "@supabase/supabase-js": "^2.45.4",
+    "agy": "^0.0.0",
+    "codex": "^0.2.3",
     "expo": "~51.0.28",
     "expo-constants": "~16.0.2",
     "expo-router": "~3.5.23",
@@ -27,5 +29,11 @@
   "devDependencies": {
     "@types/react": "~18.2.79",
     "typescript": "~5.3.3"
+  },
+  "allowScripts": {
+    "ws@7.5.11": true,
+    "ws@6.2.4": true,
+    "ws@0.4.32": true,
+    "ws@8.21.0": true
   }
 }

@@ -1,0 +1,37 @@
+services:
+  api:
+    build:
+      context: ./backend
+    container_name: financial-garden-api
+    env_file:
+      - ./backend/.env.example
+    environment:
+      DATABASE_URL: postgresql+psycopg://financial_garden:financial_garden@db:5432/financial_garden
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend/app:/app/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  db:
+    image: postgres:16-alpine
+    container_name: financial-garden-db
+    environment:
+      POSTGRES_USER: financial_garden
+      POSTGRES_PASSWORD: financial_garden
+      POSTGRES_DB: financial_garden
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U financial_garden -d financial_garden"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

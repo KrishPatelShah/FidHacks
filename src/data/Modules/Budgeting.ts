@@ -15,7 +15,7 @@ export const BudgetingModule: LearningModule = {
         summary:
           "Learn why comparing planned spending with what actually happened is the foundation of every successful budget.",
         sourceUrl:
-          "https://www.fidelity.com/learning-center/smart-money/how-to-budget",
+          "https://www.consumerfinance.gov/consumer-tools/budgeting/",
         reward: { sunlight: 1, water: 1 },
       },
 
@@ -28,7 +28,7 @@ export const BudgetingModule: LearningModule = {
         summary:
           "Understand how to separate essential expenses from discretionary spending so you can make smarter financial decisions.",
         sourceUrl:
-          "https://www.fidelity.com/learning-center/personal-finance/money-management",
+          "https://www.fidelity.com/learning-center/personal-finance/how-to-save-money",
         reward: { sunlight: 1, water: 1 },
       },
 
@@ -41,7 +41,7 @@ export const BudgetingModule: LearningModule = {
         summary:
           "Discover practical ways to record your income and expenses so your budget reflects reality instead of guesses.",
         sourceUrl:
-          "https://www.fidelity.com/learning-center/smart-money/how-to-budget",
+          "https://www.consumerfinance.gov/consumer-tools/track-your-spending/",
         reward: { sunlight: 2, water: 1 },
       },
 
@@ -54,7 +54,7 @@ export const BudgetingModule: LearningModule = {
         summary:
           "Learn which expenses stay consistent each month and which fluctuate so you can plan with confidence.",
         sourceUrl:
-          "https://www.fidelity.com/learning-center/personal-finance/money-management",
+          "https://www.nerdwallet.com/article/finance/fixed-and-variable-expenses",
         reward: { sunlight: 2, water: 1 },
       },
 
@@ -67,7 +67,7 @@ export const BudgetingModule: LearningModule = {
         summary:
           "Combine your income, expenses, and financial priorities into your first complete monthly budget.",
         sourceUrl:
-          "https://www.fidelity.com/learning-center/money-unscripted/how-to-make-a-budget",
+          "https://www.fidelity.com/learning-center/personal-finance/budgeting-basics",
         reward: { sunlight: 2, water: 2 },
       },
 
@@ -78,9 +78,9 @@ export const BudgetingModule: LearningModule = {
         difficulty: "intermediate",
         contentType: "reading",
         summary:
-          "Compare popular budgeting systems like Fidelity's 60/30/10+15 guideline and choose one that matches your lifestyle.",
+          "Explore budgeting approaches such as percentage-based budgeting and zero-based budgeting to find what works best for you.",
         sourceUrl:
-          "https://www.fidelity.com/learning-center/money-unscripted/how-to-make-a-budget",
+          "https://www.consumerfinance.gov/about-us/blog/budgeting-how-to-create-a-budget-and-stick-to-it/",
         reward: { sunlight: 2, water: 2 },
       },
 
@@ -93,7 +93,7 @@ export const BudgetingModule: LearningModule = {
         summary:
           "Learn how emergency savings protect your budget from unexpected expenses and reduce financial stress.",
         sourceUrl:
-          "https://www.fidelity.com/learning-center/personal-finance/saving-and-budgeting-money",
+          "https://www.fidelity.com/learning-center/smart-money/emergency-fund",
         reward: { sunlight: 3, water: 2 },
       },
 
@@ -106,7 +106,7 @@ export const BudgetingModule: LearningModule = {
         summary:
           "Prepare for expenses like holidays, insurance, car repairs, and annual subscriptions before they disrupt your budget.",
         sourceUrl:
-          "https://www.fidelity.com/learning-center/personal-finance/savings-plan",
+          "https://www.consumerfinance.gov/about-us/blog/how-to-plan-for-unexpected-expenses/",
         reward: { sunlight: 3, water: 2 },
       },
 
@@ -119,7 +119,7 @@ export const BudgetingModule: LearningModule = {
         summary:
           "Analyze spending trends, adjust categories, and continuously improve your budget as your financial goals change.",
         sourceUrl:
-          "https://www.fidelity.com/learning-center/smart-money/budgeting-tips",
+          "https://www.fidelity.com/learning-center/personal-finance/saving-and-budgeting-money",
         reward: { sunlight: 3, water: 3 },
       },
 
@@ -131,7 +131,8 @@ export const BudgetingModule: LearningModule = {
         contentType: "reading",
         summary:
           "Bring everything together by creating a sustainable budget that supports saving, investing, debt repayment, and future financial goals.",
-        sourceUrl: "https://www.fidelity.com/financial-basics/overview",
+        sourceUrl:
+          "https://www.fidelity.com/learning-center/personal-finance/money-management",
         reward: { sunlight: 5, water: 5 },
       },
     ]

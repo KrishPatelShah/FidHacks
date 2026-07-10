@@ -13,9 +13,9 @@ export const CreditModule: LearningModule = {
       difficulty: "beginner",
       contentType: "reading",
       summary:
-        "Learn what credit is, why it exists, and how borrowing money responsibly can help you achieve financial goals.",
+        "Learn what credit is, why it exists, and how responsible borrowing can help you achieve financial goals.",
       sourceUrl:
-        "https://www.fidelity.com/learning-center/personal-finance/what-is-credit",
+        "https://www.consumerfinance.gov/consumer-tools/credit-cards/",
       reward: { sunlight: 1, water: 1 },
     },
 
@@ -26,9 +26,9 @@ export const CreditModule: LearningModule = {
       difficulty: "beginner",
       contentType: "reading",
       summary:
-        "Discover how credit scores are calculated and why they affect everything from loans to apartment applications.",
+        "Discover how credit scores are calculated and why they influence loans, housing, and financial opportunities.",
       sourceUrl:
-        "https://www.fidelity.com/learning-center/personal-finance/credit-score",
+        "https://www.myfico.com/credit-education/what-is-a-fico-score",
       reward: { sunlight: 1, water: 1 },
     },
 
@@ -39,7 +39,7 @@ export const CreditModule: LearningModule = {
       difficulty: "beginner",
       contentType: "reading",
       summary:
-        "Explore what information appears on your credit report and why reviewing it regularly is important.",
+        "Explore what information appears on your credit report and why regularly checking it helps protect your financial health.",
       sourceUrl:
         "https://www.annualcreditreport.com/index.action",
       reward: { sunlight: 2, water: 1 },
@@ -52,9 +52,9 @@ export const CreditModule: LearningModule = {
       difficulty: "beginner",
       contentType: "reading",
       summary:
-        "Understand Annual Percentage Rate (APR), how interest is charged, and why carrying a balance can become expensive.",
+        "Understand Annual Percentage Rate (APR), how interest works, and why carrying balances can become expensive.",
       sourceUrl:
-        "https://www.fidelity.com/learning-center/personal-finance/credit-card-interest",
+        "https://www.consumerfinance.gov/ask-cfpb/what-is-a-credit-card-interest-rate-en-47/",
       reward: { sunlight: 2, water: 1 },
     },
 
@@ -65,7 +65,7 @@ export const CreditModule: LearningModule = {
       difficulty: "beginner",
       contentType: "reading",
       summary:
-        "Learn best practices for using credit cards responsibly while avoiding unnecessary interest and fees.",
+        "Learn how to use credit cards responsibly while avoiding unnecessary interest, fees, and debt.",
       sourceUrl:
         "https://www.fidelity.com/learning-center/personal-finance/credit-card-tips",
       reward: { sunlight: 2, water: 2 },
@@ -78,9 +78,9 @@ export const CreditModule: LearningModule = {
       difficulty: "intermediate",
       contentType: "reading",
       summary:
-        "Compare common forms of debt—including student loans, mortgages, auto loans, and credit cards—to understand when borrowing can be beneficial.",
+        "Compare common forms of debt including student loans, mortgages, auto loans, and credit cards.",
       sourceUrl:
-        "https://www.fidelity.com/learning-center/personal-finance/managing-debt",
+        "https://www.investor.gov/introduction-investing/general-resources/news-alerts/alerts-bulletins/investor-bulletins/understanding-debt",
       reward: { sunlight: 2, water: 2 },
     },
 
@@ -91,9 +91,9 @@ export const CreditModule: LearningModule = {
       difficulty: "intermediate",
       contentType: "reading",
       summary:
-        "Learn popular repayment strategies like the debt snowball and debt avalanche methods to become debt-free faster.",
+        "Learn repayment strategies such as the debt snowball and debt avalanche methods.",
       sourceUrl:
-        "https://www.fidelity.com/learning-center/personal-finance/pay-off-debt",
+        "https://www.consumerfinance.gov/ask-cfpb/what-is-the-best-way-to-pay-off-debt-en-317/",
       reward: { sunlight: 3, water: 2 },
     },
 
@@ -104,9 +104,9 @@ export const CreditModule: LearningModule = {
       difficulty: "intermediate",
       contentType: "reading",
       summary:
-        "Discover practical habits that can strengthen your credit score over time, including payment history and credit utilization.",
+        "Discover habits that improve credit scores, including payment history, credit utilization, and responsible borrowing.",
       sourceUrl:
-        "https://www.fidelity.com/learning-center/personal-finance/improve-credit-score",
+        "https://www.experian.com/blogs/ask-experian/how-to-improve-your-credit-score/",
       reward: { sunlight: 3, water: 2 },
     },
 
@@ -117,9 +117,9 @@ export const CreditModule: LearningModule = {
       difficulty: "intermediate",
       contentType: "reading",
       summary:
-        "Identify common mistakes that can hurt your credit, such as missed payments, maxing out cards, and applying for too much credit at once.",
+        "Identify mistakes that damage credit, such as missed payments, high balances, and excessive applications.",
       sourceUrl:
-        "https://www.fidelity.com/learning-center/personal-finance/managing-debt",
+        "https://consumer.ftc.gov/articles/using-credit",
       reward: { sunlight: 3, water: 3 },
     },
 
@@ -130,10 +130,10 @@ export const CreditModule: LearningModule = {
       difficulty: "intermediate",
       contentType: "reading",
       summary:
-        "Bring everything together by building a long-term strategy for maintaining healthy credit while using debt as a financial tool—not a financial burden.",
+        "Combine credit knowledge, debt strategies, and responsible borrowing habits into a long-term financial approach.",
       sourceUrl:
-        "https://www.fidelity.com/learning-center/personal-finance",
+        "https://www.fidelity.com/learning-center/personal-finance/managing-debt",
       reward: { sunlight: 5, water: 5 },
     },
   ],
-}
+};

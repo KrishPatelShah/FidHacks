@@ -1,7 +1,6 @@
 import { LearningModule } from "@/types/domain";
 
-export const InvestingModule: LearningModule = 
-{
+export const InvestingModule: LearningModule = {
   id: "module_investing",
   category: "funds",
   flowerName: "Investment Flowers",
@@ -16,7 +15,7 @@ export const InvestingModule: LearningModule =
       summary:
         "Learn why investing helps grow wealth over time and how it differs from simply saving money.",
       sourceUrl:
-        "https://www.fidelity.com/learning-center/trading-investing/why-invest",
+        "https://www.fidelity.com/learning-center/trading-investing/investing-for-beginners",
       reward: { sunlight: 1, water: 1 },
     },
 
@@ -27,9 +26,9 @@ export const InvestingModule: LearningModule =
       difficulty: "beginner",
       contentType: "reading",
       summary:
-        "See how investments can grow through compounding, allowing your earnings to generate additional earnings over time.",
+        "Understand how investments can grow over time as your earnings generate additional earnings.",
       sourceUrl:
-        "https://www.fidelity.com/learning-center/trading-investing/compound-interest",
+        "https://www.investor.gov/introduction-investing/investing-basics/compound-interest",
       reward: { sunlight: 1, water: 1 },
     },
 
@@ -40,7 +39,7 @@ export const InvestingModule: LearningModule =
       difficulty: "beginner",
       contentType: "reading",
       summary:
-        "Understand the relationship between investment risk and potential return, and why every investment involves tradeoffs.",
+        "Understand why investments with higher potential returns usually involve greater risk.",
       sourceUrl:
         "https://www.fidelity.com/learning-center/trading-investing/risk-tolerance",
       reward: { sunlight: 2, water: 1 },
@@ -49,13 +48,13 @@ export const InvestingModule: LearningModule =
     {
       id: "investing-asset-classes",
       category: "funds",
-      title: "Savings, Bonds, Funds, and Stocks",
+      title: "Stocks, Bonds, and Cash",
       difficulty: "beginner",
       contentType: "reading",
       summary:
-        "Compare cash, bonds, mutual funds, ETFs, and stocks by their typical risk, return, and purpose within a portfolio.",
+        "Compare major investment categories and learn how stocks, bonds, and cash serve different purposes.",
       sourceUrl:
-        "https://www.fidelity.com/learning-center/trading-investing/investing-basics",
+        "https://www.investor.gov/introduction-investing/investing-basics/investment-products",
       reward: { sunlight: 2, water: 1 },
     },
 
@@ -66,9 +65,9 @@ export const InvestingModule: LearningModule =
       difficulty: "beginner",
       contentType: "reading",
       summary:
-        "Learn why spreading investments across different assets can reduce risk without eliminating growth opportunities.",
+        "Learn why spreading investments across different assets can help manage risk.",
       sourceUrl:
-        "https://www.fidelity.com/learning-center/trading-investing/diversification",
+        "https://www.fidelity.com/viewpoints/investing-ideas/guide-to-diversification",
       reward: { sunlight: 2, water: 2 },
     },
 
@@ -79,9 +78,9 @@ export const InvestingModule: LearningModule =
       difficulty: "intermediate",
       contentType: "reading",
       summary:
-        "Compare mutual funds and exchange-traded funds (ETFs), including how they're managed and when each might be appropriate.",
+        "Compare mutual funds and ETFs and understand how investors use them to create diversified portfolios.",
       sourceUrl:
-        "https://www.fidelity.com/learning-center/investment-products/etf/etfs-vs-mutual-funds",
+        "https://www.fidelity.com/learning-center/investment-products/etf/what-is-an-etf",
       reward: { sunlight: 3, water: 2 },
     },
 
@@ -92,7 +91,7 @@ export const InvestingModule: LearningModule =
       difficulty: "intermediate",
       contentType: "reading",
       summary:
-        "Discover how index funds work, why they're popular with long-term investors, and how they differ from actively managed funds.",
+        "Learn how index funds track market indexes and why many long-term investors choose passive investing strategies.",
       sourceUrl:
         "https://www.fidelity.com/learning-center/trading-investing/index-funds",
       reward: { sunlight: 3, water: 2 },
@@ -101,26 +100,26 @@ export const InvestingModule: LearningModule =
     {
       id: "investing-risk-tolerance",
       category: "funds",
-      title: "Knowing Your Risk Tolerance",
+      title: "Finding Your Risk Level",
       difficulty: "intermediate",
       contentType: "reading",
       summary:
-        "Understand how your age, financial goals, and comfort with market swings influence your investment choices.",
+        "Discover how your goals, timeline, and comfort with market changes affect investment decisions.",
       sourceUrl:
-        "https://www.fidelity.com/learning-center/trading-investing/risk-tolerance",
+        "https://www.investor.gov/introduction-investing/general-resources/news-alerts/alerts-bulletins/investor-bulletins/assessing-your-risk",
       reward: { sunlight: 3, water: 3 },
     },
 
     {
       id: "investing-long-term",
       category: "funds",
-      title: "Thinking Long Term",
+      title: "Investing for the Long Term",
       difficulty: "intermediate",
       contentType: "reading",
       summary:
-        "Learn why successful investing often means staying invested through market ups and downs instead of reacting emotionally.",
+        "Learn why patience, consistency, and avoiding emotional decisions are important for successful investing.",
       sourceUrl:
-        "https://www.fidelity.com/learning-center/trading-investing/long-term-investing",
+        "https://investor.vanguard.com/investor-resources-education/article/staying-the-course",
       reward: { sunlight: 4, water: 3 },
     },
 
@@ -131,10 +130,10 @@ export const InvestingModule: LearningModule =
       difficulty: "intermediate",
       contentType: "reading",
       summary:
-        "Bring together diversification, asset allocation, and long-term thinking to understand how a simple investment portfolio is constructed.",
+        "Combine asset allocation, diversification, and risk management to understand how a simple portfolio is created.",
       sourceUrl:
-        "https://www.fidelity.com/learning-center/trading-investing/asset-allocation",
+        "https://www.investor.gov/introduction-investing/investing-basics/asset-allocation",
       reward: { sunlight: 5, water: 5 },
     },
   ],
-}
+};

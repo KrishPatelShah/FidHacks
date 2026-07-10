@@ -13,9 +13,9 @@ export const RetirementModule: LearningModule = {
       difficulty: "beginner",
       contentType: "reading",
       summary:
-        "Learn why retirement planning starts early and how small contributions today can grow into meaningful savings over time.",
+        "Learn why retirement planning starts early and how consistent contributions can grow into meaningful savings over time.",
       sourceUrl:
-        "https://www.fidelity.com/learning-center/personal-finance/retirement/retirement-planning",
+        "https://www.fidelity.com/retirement/retirement-planning",
       reward: { sunlight: 1, water: 1 },
     },
 
@@ -26,9 +26,9 @@ export const RetirementModule: LearningModule = {
       difficulty: "beginner",
       contentType: "reading",
       summary:
-        "Discover how earning returns on your previous returns makes starting early one of the biggest advantages in retirement saving.",
+        "Discover how investment growth can accelerate over time and why starting early is one of the biggest advantages in retirement planning.",
       sourceUrl:
-        "https://www.fidelity.com/learning-center/trading-investing/compound-interest",
+        "https://www.investor.gov/introduction-investing/investing-basics/compound-interest",
       reward: { sunlight: 1, water: 1 },
     },
 
@@ -39,8 +39,9 @@ export const RetirementModule: LearningModule = {
       difficulty: "beginner",
       contentType: "reading",
       summary:
-        "Compare common retirement accounts like 401(k)s, Traditional IRAs, and Roth IRAs to understand their purpose and key differences.",
-      sourceUrl: "https://www.fidelity.com/retirement-ira/overview",
+        "Compare retirement accounts such as 401(k)s, Traditional IRAs, and Roth IRAs and understand their different purposes.",
+      sourceUrl:
+        "https://www.fidelity.com/retirement-ira/overview",
       reward: { sunlight: 2, water: 1 },
     },
 
@@ -51,9 +52,9 @@ export const RetirementModule: LearningModule = {
       difficulty: "beginner",
       contentType: "reading",
       summary:
-        "Learn how workplace retirement plans help employees save for retirement through automatic payroll contributions.",
+        "Learn how employer-sponsored retirement plans allow employees to save automatically through payroll contributions.",
       sourceUrl:
-        "https://www.fidelity.com/learning-center/personal-finance/401k-basics",
+        "https://www.fidelity.com/learning-center/personal-finance/retirement/401k-benefits",
       reward: { sunlight: 2, water: 1 },
     },
 
@@ -64,9 +65,9 @@ export const RetirementModule: LearningModule = {
       difficulty: "beginner",
       contentType: "reading",
       summary:
-        "Understand how employer matching works and why contributing enough to receive the full match is often considered a valuable employee benefit.",
+        "Understand how employer contributions work and why taking advantage of a company match can accelerate retirement savings.",
       sourceUrl:
-        "https://www.fidelity.com/learning-center/personal-finance/401k-match",
+        "https://www.fidelity.com/learning-center/personal-finance/retirement/401k-benefits",
       reward: { sunlight: 2, water: 2 },
     },
 
@@ -77,9 +78,9 @@ export const RetirementModule: LearningModule = {
       difficulty: "intermediate",
       contentType: "reading",
       summary:
-        "Compare Roth and Traditional retirement accounts by exploring when taxes are paid and how withdrawals differ.",
+        "Compare Roth and Traditional retirement accounts by learning when taxes are paid and how withdrawals work.",
       sourceUrl:
-        "https://www.fidelity.com/retirement-ira/roth-vs-traditional-ira",
+        "https://www.fidelity.com/retirement-ira/roth-ira",
       reward: { sunlight: 3, water: 2 },
     },
 
@@ -90,9 +91,9 @@ export const RetirementModule: LearningModule = {
       difficulty: "intermediate",
       contentType: "reading",
       summary:
-        "Learn why retirement accounts have annual contribution limits and how they encourage long-term investing.",
+        "Learn why retirement accounts have yearly contribution limits and how they affect retirement savings strategies.",
       sourceUrl:
-        "https://www.fidelity.com/retirement-ira/contribution-limits-deadlines",
+        "https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-contributions",
       reward: { sunlight: 3, water: 2 },
     },
 
@@ -103,9 +104,9 @@ export const RetirementModule: LearningModule = {
       difficulty: "intermediate",
       contentType: "reading",
       summary:
-        "Understand when retirement savings can typically be withdrawn and why early withdrawals may have taxes or penalties.",
+        "Understand retirement withdrawal rules, taxes, and why accessing retirement money early may have consequences.",
       sourceUrl:
-        "https://www.fidelity.com/learning-center/personal-finance/retirement/retirement-withdrawals",
+        "https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-tax-on-early-distributions",
       reward: { sunlight: 3, water: 3 },
     },
 
@@ -116,9 +117,9 @@ export const RetirementModule: LearningModule = {
       difficulty: "intermediate",
       contentType: "reading",
       summary:
-        "Identify common retirement planning mistakes, including delaying contributions, missing employer matches, and withdrawing savings too early.",
+        "Identify common retirement mistakes such as waiting too long to save, missing employer benefits, or ignoring investment choices.",
       sourceUrl:
-        "https://www.fidelity.com/learning-center/personal-finance/retirement",
+        "https://www.fidelity.com/learning-center/wealth-management-insights/retirement-master-plan",
       reward: { sunlight: 4, water: 3 },
     },
 
@@ -129,8 +130,9 @@ export const RetirementModule: LearningModule = {
       difficulty: "intermediate",
       contentType: "reading",
       summary:
-        "Bring everything together by creating a long-term retirement savings strategy that evolves throughout your career.",
-      sourceUrl: "https://www.fidelity.com/retirement-planning/overview",
+        "Combine retirement accounts, contributions, investing, and long-term goals into a complete retirement strategy.",
+      sourceUrl:
+        "https://www.fidelity.com/retirement-planning/plan-for-retirement",
       reward: { sunlight: 5, water: 5 },
     },
   ],

@@ -1,9 +1,19 @@
+import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { GardenThemeProvider } from "@/components/GardenThemeProvider";
 import { GardenProvider } from "@/state/garden";
 
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    OpenDyslexic: require("../assets/OpenDyslexic.otf"),
+    "OpenDyslexic-Bold": require("../assets/OpenDyslexic-Bold.otf")
+  });
+
+  if (!fontsLoaded) {
+    return null;
+  }
+
   return (
     <GardenProvider>
       <GardenThemeProvider>

@@ -3,6 +3,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { BackButton } from "@/components/BackButton";
+import { ProfileButton } from "@/components/ProfileButton";
 import { FlowerIcon } from "@/components/FlowerIcon";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { Term } from "@/components/Term";
@@ -58,6 +59,7 @@ export default function LessonScreen() {
   return (
     <View style={styles.root}>
       <BackButton />
+      <ProfileButton />
       <ScrollView contentContainerStyle={styles.screen}>
       <View style={styles.hero}>
         <View style={styles.iconWrap}>

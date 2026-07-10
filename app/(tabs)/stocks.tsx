@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { FlowerIcon } from "@/components/FlowerIcon";
 import { Sparkline } from "@/components/Sparkline";
+import { TopNav } from "@/components/TopNav";
 import { etfs, riskProfileCopy, timeRanges, TimeRange } from "@/data/investments";
 import { canAccessCategory, investingUnlocked } from "@/lib/levels";
 import { useGarden } from "@/state/garden";
@@ -32,6 +33,7 @@ export default function StocksScreen() {
   if (!investingUnlocked(experienceLevel)) {
     return (
       <ScrollView contentContainerStyle={styles.screen}>
+        <TopNav />
         <View style={styles.header}>
           <Text style={styles.eyebrow}>Invest Garden</Text>
           <Text style={styles.title}>Investing unlocks soon.</Text>
@@ -76,6 +78,7 @@ export default function StocksScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.screen}>
+      <TopNav />
       <View style={styles.header}>
         <Text style={styles.eyebrow}>Invest Garden</Text>
         <Text style={styles.title}>Educational picks for your profile.</Text>

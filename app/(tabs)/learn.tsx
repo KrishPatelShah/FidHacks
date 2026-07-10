@@ -3,6 +3,7 @@ import { Link } from "expo-router";
 import { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { FlowerIcon } from "@/components/FlowerIcon";
+import { TopNav } from "@/components/TopNav";
 import { difficultyUnlocked } from "@/lib/levels";
 import { getLearningModules } from "@/services/api";
 import { useGarden } from "@/state/garden";
@@ -69,6 +70,7 @@ export default function LearningPathScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.screen}>
+      <TopNav />
       <View style={styles.header}>
         <Text style={styles.title}>Grow Your Money Knowledge</Text>
         <Text style={styles.subtitle}>Complete lessons to unlock new flowers.</Text>

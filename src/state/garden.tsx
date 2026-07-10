@@ -4,7 +4,7 @@ import { achievementDefs } from "@/data/achievements";
 import { learningModules } from "@/data/lessons";
 import { demoPlants } from "@/data/plants";
 import { sampleTransactions } from "@/data/transactions";
-import { ApiError, Bootstrap, clearAccessToken, demoLogin, getAccessToken, getBootstrap, isBackendUnavailable, QuizAttemptResult } from "@/services/api";
+import { ApiError, Bootstrap, clearAccessToken, demoLogin, getAccessToken, getBootstrap, isBackendUnavailable, QuizAttemptResult, resetRemoteGarden } from "@/services/api";
 import { clearAssessment } from "@/services/assessmentStorage";
 import {
   Achievement,
@@ -620,9 +620,14 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     setAccountError(null);
     seededRef.current = false;
     clearAssessment().catch(() => {});
-    // Sign out of the demo backend session; otherwise the next app launch
-    // bootstraps the server's seeded garden right back over the reset state.
-    clearAccessToken().catch(() => {});
+    // Also wipe the backend (Postgres) copy of the garden so it can't carry
+    // flowers back over. If the reset can't reach the server, sign out instead
+    // so the stale server garden won't bootstrap over the reset on next launch.
+    resetRemoteGarden()
+      .then((cleared) => {
+        if (!cleared) return clearAccessToken();
+      })
+      .catch(() => clearAccessToken().catch(() => {}));
   }, []);
 
   const value = useMemo<GardenContextValue>(

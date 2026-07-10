@@ -23,10 +23,13 @@ export default function StocksScreen() {
   const [range, setRange] = useState<TimeRange>("1M");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [planted, setPlanted] = useState<Record<string, boolean>>({});
+  const [plantNote, setPlantNote] = useState<string | null>(null);
 
   function handlePlant(etf: Etf) {
-    plantInvestment(etf.category);
+    if (planted[etf.symbol]) return;
+    const reward = plantInvestment(etf.category);
     setPlanted((current) => ({ ...current, [etf.symbol]: true }));
+    setPlantNote(`You planted ${etf.symbol} — a new ${reward.flowerName} bloomed in your garden (${reward.quantity} total).`);
   }
 
   // Beginners haven't unlocked investing yet, so show a locked gate instead.
@@ -99,6 +102,16 @@ export default function StocksScreen() {
         <Ionicons color={colors.deepGreen} name="compass" size={18} />
         <Text style={styles.profileCopy}>{riskProfileCopy[riskProfile]}</Text>
       </View>
+
+      {plantNote ? (
+        <View style={styles.plantNote}>
+          <Ionicons color={colors.deepGreen} name="flower" size={18} />
+          <Text style={styles.plantNoteText}>{plantNote}</Text>
+          <TouchableOpacity hitSlop={8} onPress={() => setPlantNote(null)}>
+            <Ionicons color={colors.mutedText} name="close" size={18} />
+          </TouchableOpacity>
+        </View>
+      ) : null}
 
       <View style={styles.rangeRow}>
         {timeRanges.map((item) => (
@@ -180,7 +193,7 @@ export default function StocksScreen() {
 
       <View style={styles.disclaimer}>
         <Text style={styles.disclaimerTitle}>Simulated & educational only</Text>
-        <Text style={styles.disclaimerCopy}>Prices and picks are mock data for learning. This is not investment advice. Planting records a local simulation, not a real position or server garden reward.</Text>
+        <Text style={styles.disclaimerCopy}>Prices and picks are mock data for learning. This is not investment advice. Planting grows the matching flower in your garden — it simulates a position, it does not buy anything real.</Text>
       </View>
 
       <View style={styles.ladderCard}>
@@ -289,6 +302,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     lineHeight: 20
+  },
+  plantNote: {
+    alignItems: "center",
+    backgroundColor: "#E8F7F0",
+    borderRadius: 18,
+    flexDirection: "row",
+    gap: 10,
+    padding: 14
+  },
+  plantNoteText: {
+    color: colors.darkText,
+    flex: 1,
+    fontSize: 13,
+    fontWeight: "800",
+    lineHeight: 19
   },
   rangeRow: {
     backgroundColor: "#E9D8B9",

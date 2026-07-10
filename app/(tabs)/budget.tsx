@@ -56,7 +56,7 @@ function formatMoneyExact(amount: number) {
 }
 
 export default function BudgetScreen() {
-  const { transactions, addTransaction, logBudget, commitReceipt, receiptsScanned } = useGarden();
+  const { transactions, addTransaction, removeTransaction, loadSampleTransactions, logBudget, commitReceipt, receiptsScanned } = useGarden();
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const [scanning, setScanning] = useState(false);
@@ -82,6 +82,7 @@ export default function BudgetScreen() {
     return { totals, allocated, income };
   }, [transactions]);
 
+  const hasData = transactions.length > 0;
   const remaining = Math.max(groups.income - groups.allocated, 0);
   const nutrientPct = groups.income > 0 ? Math.round((remaining / groups.income) * 100) : 0;
 
@@ -195,26 +196,47 @@ export default function BudgetScreen() {
         <Text style={styles.title}>Your money habits are blooming.</Text>
       </View>
 
-      <View style={styles.hydrationCard}>
-        <View style={styles.hydrationIcons}>
-          {groupOrder.map((group) => (
-            <View key={group} style={styles.hydrationIconWrap}>
-              <FlowerIcon name={bedMeta[group].flower} size={34} />
-            </View>
-          ))}
+      {hasData ? (
+        <View style={styles.hydrationCard}>
+          <View style={styles.hydrationIcons}>
+            {groupOrder.map((group) => (
+              <View key={group} style={styles.hydrationIconWrap}>
+                <FlowerIcon name={bedMeta[group].flower} size={34} />
+              </View>
+            ))}
+          </View>
+          <Text style={styles.hydrationTitle}>Garden Hydration</Text>
+          <Text style={styles.hydrationCopy}>
+            Your garden grows through mindful, balanced spending. {nutrientPct}% nutrients remaining this month.
+          </Text>
+          <View style={styles.hydrationBar}>
+            <View style={[styles.hydrationFill, { width: `${nutrientPct}%` }]} />
+          </View>
+          <Text style={styles.hydrationMoney}>
+            {formatMoneyExact(remaining)}
+            <Text style={styles.hydrationMoneySub}>  REMAINING of {formatMoneyExact(groups.income)}</Text>
+          </Text>
         </View>
-        <Text style={styles.hydrationTitle}>Garden Hydration</Text>
-        <Text style={styles.hydrationCopy}>
-          Your garden grows through mindful, balanced spending. {nutrientPct}% nutrients remaining this month.
-        </Text>
-        <View style={styles.hydrationBar}>
-          <View style={[styles.hydrationFill, { width: `${nutrientPct}%` }]} />
+      ) : (
+        <View style={styles.hydrationCard}>
+          <View style={styles.hydrationIcons}>
+            {groupOrder.map((group) => (
+              <View key={group} style={styles.hydrationIconWrap}>
+                <FlowerIcon name={bedMeta[group].flower} size={34} />
+              </View>
+            ))}
+          </View>
+          <Text style={styles.hydrationTitle}>Start your budget</Text>
+          <Text style={styles.hydrationCopy}>
+            This budget is built entirely from your own purchases and income. Scan a receipt, add entries manually
+            (including your income), or load sample data to explore first.
+          </Text>
+          <TouchableOpacity activeOpacity={0.8} onPress={loadSampleTransactions} style={styles.sampleButton}>
+            <Ionicons color={colors.deepGreen} name="flask" size={16} />
+            <Text style={styles.sampleButtonText}>Load sample data</Text>
+          </TouchableOpacity>
         </View>
-        <Text style={styles.hydrationMoney}>
-          {formatMoneyExact(remaining)}
-          <Text style={styles.hydrationMoneySub}>  REMAINING of {formatMoneyExact(groups.income)}</Text>
-        </Text>
-      </View>
+      )}
 
       <View style={styles.actionRow}>
         <TouchableOpacity
@@ -252,8 +274,8 @@ export default function BudgetScreen() {
         </View>
       ) : null}
 
-      <Text style={styles.sectionTitle}>Your garden beds</Text>
-      {groupOrder.map((group) => {
+      {hasData ? <Text style={styles.sectionTitle}>Your garden beds</Text> : null}
+      {hasData && groupOrder.map((group) => {
         const spent = groups.totals[group];
         const goalMoney = groups.income * targets[group];
         const status = bedStatus(spent, goalMoney);
@@ -290,6 +312,7 @@ export default function BudgetScreen() {
         );
       })}
 
+      {hasData ? (
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Text style={styles.sectionTitle}>50 / 30 / 20 split</Text>
@@ -329,7 +352,9 @@ export default function BudgetScreen() {
           })}
         </View>
       </View>
+      ) : null}
 
+      {hasData ? (
       <View style={styles.proTip}>
         <View style={styles.proTipHeader}>
           <Ionicons color={colors.sunflowerYellow} name="bulb" size={18} />
@@ -342,6 +367,7 @@ export default function BudgetScreen() {
           </TouchableOpacity>
         </Link>
       </View>
+      ) : null}
 
       <View style={styles.searchBar}>
         <Ionicons color={colors.mutedText} name="search" size={18} />
@@ -370,7 +396,9 @@ export default function BudgetScreen() {
       <Text style={styles.sectionTitle}>Recent purchases</Text>
       <View style={styles.list}>
         {filtered.length === 0 ? (
-          <Text style={styles.empty}>No purchases match that filter yet.</Text>
+          <Text style={styles.empty}>
+            {hasData ? "No purchases match that filter yet." : "Nothing here yet — scan a receipt or add a purchase to begin."}
+          </Text>
         ) : (
           filtered.map((txn) => {
             const meta = categoryMeta[txn.category];
@@ -392,6 +420,9 @@ export default function BudgetScreen() {
                   {txn.category === "income" ? "+" : "-"}
                   {formatMoneyExact(txn.amount)}
                 </Text>
+                <Pressable hitSlop={8} onPress={() => removeTransaction(txn.id)}>
+                  <Ionicons color={colors.mutedText} name="trash-outline" size={17} />
+                </Pressable>
               </View>
             );
           })
@@ -558,6 +589,23 @@ const styles = StyleSheet.create({
     color: colors.mutedText,
     fontSize: 12,
     fontWeight: "800"
+  },
+  sampleButton: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    backgroundColor: colors.white,
+    borderColor: colors.line,
+    borderRadius: 16,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12
+  },
+  sampleButtonText: {
+    color: colors.deepGreen,
+    fontSize: 14,
+    fontWeight: "900"
   },
   bedCard: {
     alignItems: "center",

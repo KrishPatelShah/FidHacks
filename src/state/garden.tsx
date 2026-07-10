@@ -49,6 +49,20 @@ export type ReceiptCommitResult = {
   quantity: number;
 };
 
+export type PlantInvestmentResult = {
+  flowerName: string;
+  quantity: number;
+};
+
+// Flower shown for each investment rung when the plant does not exist yet
+// (older saved gardens have no "bonds" plant, for example).
+const investmentFlowerNames: Partial<Record<PlantCategory, string>> = {
+  cash: "White Lily",
+  bonds: "Bluebell",
+  funds: "Purple Tulip",
+  stocks: "Red Poppy"
+};
+
 type GardenContextValue = {
   hydrated: boolean;
   loadingAccount: boolean;
@@ -74,8 +88,10 @@ type GardenContextValue = {
   unlockedAchievements: string[];
   celebration: Achievement | null;
   logBudget: (category?: PlantCategory) => void;
-  plantInvestment: (category: PlantCategory) => void;
+  plantInvestment: (category: PlantCategory) => PlantInvestmentResult;
   addTransaction: (input: { merchant: string; amount: number; category: SpendCategory; source: TransactionSource; note?: string }) => void;
+  removeTransaction: (id: string) => void;
+  loadSampleTransactions: () => void;
   commitReceipt: (receipt: ParsedReceipt) => ReceiptCommitResult;
   setRiskProfile: (profile: RiskProfile) => void;
   setExperienceLevel: (level: ExperienceLevel) => void;
@@ -120,7 +136,9 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   const [flowersGrown, setFlowersGrown] = useState(0);
   const [investmentsPlanted, setInvestmentsPlanted] = useState(0);
   const [receiptsScanned, setReceiptsScanned] = useState(0);
-  const [transactions, setTransactions] = useState<Transaction[]>(sampleTransactions);
+  // Budgets start empty so the numbers on screen are always the user's own;
+  // sample data is opt-in via loadSampleTransactions for demos.
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [completedLessonIds, setCompletedLessonIds] = useState<string[]>([]);
   const [completedModuleIds, setCompletedModuleIds] = useState<string[]>([]);
   const [riskProfile, setRiskProfileState] = useState<RiskProfile>("Moderate");
@@ -400,9 +418,50 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     []
   );
 
+  // Planting a simulated investment grows the matching flower in the garden,
+  // creating the plant on the fly if this garden predates that category.
   const plantInvestment = useCallback(
-    (_category: PlantCategory) => {
+    (category: PlantCategory): PlantInvestmentResult => {
+      const now = new Date().toISOString();
+      let flowerName = investmentFlowerNames[category] ?? "Purple Tulip";
+      let quantity = 1;
+      setPlants((current) => {
+        const existing = current.find((plant) => plant.type === category);
+        if (!existing) {
+          const created: Plant = {
+            id: `plant_local_${category}`,
+            userId: "demo_user",
+            type: category,
+            flowerName,
+            stage: 1,
+            growth: 10,
+            quantity: 1,
+            water: 0,
+            sunlight: 1,
+            fertilizer: 0,
+            unlocked: true,
+            createdAt: now,
+            updatedAt: now
+          };
+          return [...current, created];
+        }
+        flowerName = existing.flowerName;
+        quantity = existing.quantity + 1;
+        return current.map((plant) =>
+          plant.type === category
+            ? {
+                ...plant,
+                unlocked: true,
+                quantity: plant.quantity + 1,
+                growth: Math.min(100, plant.growth + 10),
+                updatedAt: now
+              }
+            : plant
+        );
+      });
+      setFlowersGrown((count) => count + 1);
       setInvestmentsPlanted((count) => count + 1);
+      return { flowerName, quantity };
     },
     []
   );
@@ -422,6 +481,14 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     },
     []
   );
+
+  const removeTransaction = useCallback((id: string) => {
+    setTransactions((current) => current.filter((txn) => txn.id !== id));
+  }, []);
+
+  const loadSampleTransactions = useCallback(() => {
+    setTransactions(sampleTransactions);
+  }, []);
 
   const setRiskProfile = useCallback((profile: RiskProfile) => setRiskProfileState(profile), []);
 
@@ -511,7 +578,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     setQuizzesPassed(0);
     setCompletedLessonIds([]);
     setCompletedModuleIds([]);
-    setTransactions(sampleTransactions);
+    setTransactions([]);
     setRiskProfileState("Moderate");
     setExperienceLevelState("beginner");
     setConfidenceAssessment(null);
@@ -549,6 +616,8 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       logBudget,
       plantInvestment,
       addTransaction,
+      removeTransaction,
+      loadSampleTransactions,
       commitReceipt,
       setRiskProfile,
       setExperienceLevel,
@@ -587,6 +656,8 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       logBudget,
       plantInvestment,
       addTransaction,
+      removeTransaction,
+      loadSampleTransactions,
       commitReceipt,
       setRiskProfile,
       setExperienceLevel,

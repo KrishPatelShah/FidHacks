@@ -120,7 +120,7 @@ export default function CommunityScreen() {
               <Text style={styles.copy}>
                 {friendFlowerCount(friend)} flowers · {friendFlowerTypes(friend)} flower types · {friend.streakDays} day streak
               </Text>
-              <GardenPreview plants={friendPlants(friend)} />
+              <GardenPreview plants={friendPlants(friend)} ownGarden={false} />
               <View style={styles.badgeRow}>
                 <Text style={styles.badge}>{friend.topBadge}</Text>
                 <Text style={styles.badge}>Quiz Sprout</Text>

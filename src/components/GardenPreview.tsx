@@ -1,6 +1,8 @@
 import { LinearGradient as ScreenGradient } from "expo-linear-gradient";
-import { useEffect, useRef } from "react";
-import { Animated, Easing, StyleSheet, Text, View } from "react-native";
+import { router } from "expo-router";
+import { useEffect, useRef, useState } from "react";
+import { Animated, Easing, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { FlowerIcon } from "@/components/FlowerIcon";
 import Svg, {
   Circle,
   Defs,
@@ -16,7 +18,57 @@ import Svg, {
 // from the illustration down into the footer.
 const SKY_GRADIENT = ["#DCEEFF", "#EFFAF0"] as const;
 import { colors, shadow } from "@/theme/colors";
-import { Plant } from "@/types/domain";
+import { Plant, PlantCategory } from "@/types/domain";
+
+// What each flower means and which learning module teaches it. Categories
+// without their own module fall back to the Learn tab.
+const categoryInfo: Record<PlantCategory, { label: string; meaning: string; moduleId: string | null }> = {
+  budgeting: {
+    label: "Budgeting Basics",
+    meaning: "Grows when you budget, track spending, and compare expected vs. actual.",
+    moduleId: "module_budgeting"
+  },
+  savings: {
+    label: "Savings & Emergency Fund",
+    meaning: "Grows as you learn about saving goals and building an emergency fund.",
+    moduleId: "module_savings"
+  },
+  credit_debt: {
+    label: "Credit & Debt",
+    meaning: "Grows with lessons on credit cards, credit scores, APR, and paying down debt.",
+    moduleId: "module_credit"
+  },
+  retirement: {
+    label: "Retirement Accounts",
+    meaning: "Grows as you learn about Roth IRAs, 401(k)s, and employer matches.",
+    moduleId: "module_retirement"
+  },
+  career_taxes: {
+    label: "Career Money & Taxes",
+    meaning: "Grows with lessons on paychecks, taxes, benefits, and take-home pay.",
+    moduleId: null
+  },
+  cash: {
+    label: "Cash & Savings Accounts",
+    meaning: "The safest rung of the risk / return ladder: lowest risk, lowest growth.",
+    moduleId: "module_investing"
+  },
+  bonds: {
+    label: "Bonds",
+    meaning: "Low-to-moderate risk investments that grow a bit faster than savings.",
+    moduleId: "module_investing"
+  },
+  funds: {
+    label: "Index & Mutual Funds",
+    meaning: "Diversified, medium-risk investments — the balanced middle of the ladder.",
+    moduleId: "module_investing"
+  },
+  stocks: {
+    label: "Individual Stocks",
+    meaning: "The boldest rung: highest risk with the highest potential return.",
+    moduleId: "module_investing"
+  }
+};
 
 const AnimatedG = Animated.createAnimatedComponent(G);
 
@@ -138,7 +190,8 @@ function Bee({ x, y }: { x: number; y: number }) {
   );
 }
 
-export function GardenPreview({ plants }: { plants: Plant[] }) {
+export function GardenPreview({ plants, ownGarden = true }: { plants: Plant[]; ownGarden?: boolean }) {
+  const [selected, setSelected] = useState<Plant | null>(null);
   const flowers = plants.flatMap((plant) =>
     Array.from({ length: plant.quantity }).map((_, index) => ({ plant, index }))
   );
@@ -263,9 +316,12 @@ export function GardenPreview({ plants }: { plants: Plant[] }) {
               <G
                 key={`${plant.id}_${shown[index].index}_${index}`}
                 transform={`translate(${pos.x} ${pos.y}) scale(${pos.scale})`}
+                onPress={() => setSelected(plant)}
               >
                 <AnimatedG originX={0} originY={0} rotation={index % 2 === 0 ? swayA : swayB}>
                   <Flower color={color} tulip={tulipFlowers.has(plant.flowerName)} />
+                  {/* Invisible disc over the bloom so taps register reliably. */}
+                  <Circle cx={0} cy={-80} r={28} fill="#FFFFFF" fillOpacity={0.01} />
                 </AnimatedG>
               </G>
             );
@@ -287,11 +343,47 @@ export function GardenPreview({ plants }: { plants: Plant[] }) {
           <>
             <Text style={styles.caption}>Your garden grows through lessons, reflection, and consistency.</Text>
             <Text style={styles.meta}>
-              {flowers.length} {flowers.length === 1 ? "flower" : "flowers"} grown · {unlockedCount} categories unlocked
+              {flowers.length} {flowers.length === 1 ? "flower" : "flowers"} grown · {unlockedCount} categories unlocked · tap a flower to learn about it
             </Text>
           </>
         )}
       </View>
+
+      <Modal transparent animationType="fade" visible={selected !== null} onRequestClose={() => setSelected(null)}>
+        <Pressable style={styles.popupBackdrop} onPress={() => setSelected(null)}>
+          {selected ? (
+            <Pressable style={styles.popupCard} onPress={() => {}}>
+              <View style={styles.popupFlower}>
+                <FlowerIcon name={selected.flowerName} size={64} />
+              </View>
+              <Text style={styles.popupName}>{selected.flowerName}</Text>
+              <Text style={styles.popupCategory}>{categoryInfo[selected.type]?.label ?? "Financial Garden"}</Text>
+              <Text style={styles.popupMeaning}>{categoryInfo[selected.type]?.meaning ?? ""}</Text>
+              <Text style={styles.popupCount}>
+                {ownGarden
+                  ? `You've grown ${selected.quantity} of these · ${selected.growth}% to the next stage`
+                  : `They've grown ${selected.quantity} of these flowers`}
+              </Text>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                style={styles.popupButton}
+                onPress={() => {
+                  const moduleId = categoryInfo[selected.type]?.moduleId;
+                  setSelected(null);
+                  router.push(moduleId ? `/module/${moduleId}` : "/(tabs)/learn");
+                }}
+              >
+                <Text style={styles.popupButtonText}>
+                  {categoryInfo[selected.type]?.moduleId ? "Go to its lessons" : "Explore lessons"}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.popupClose} onPress={() => setSelected(null)}>
+                <Text style={styles.popupCloseText}>Close</Text>
+              </TouchableOpacity>
+            </Pressable>
+          ) : null}
+        </Pressable>
+      </Modal>
     </ScreenGradient>
   );
 }
@@ -320,5 +412,79 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
     textAlign: "center"
+  },
+  popupBackdrop: {
+    alignItems: "center",
+    backgroundColor: "rgba(15, 61, 48, 0.55)",
+    flex: 1,
+    justifyContent: "center",
+    padding: 28
+  },
+  popupCard: {
+    alignItems: "center",
+    backgroundColor: colors.cream,
+    borderRadius: 30,
+    gap: 6,
+    padding: 26,
+    width: "100%",
+    ...shadow
+  },
+  popupFlower: {
+    alignItems: "center",
+    backgroundColor: "#E8F7F0",
+    borderRadius: 26,
+    height: 92,
+    justifyContent: "center",
+    marginBottom: 6,
+    width: 92
+  },
+  popupName: {
+    color: colors.darkText,
+    fontSize: 24,
+    fontWeight: "900"
+  },
+  popupCategory: {
+    color: colors.deepGreen,
+    fontSize: 13,
+    fontWeight: "900",
+    letterSpacing: 0.4,
+    textTransform: "uppercase"
+  },
+  popupMeaning: {
+    color: colors.mutedText,
+    fontSize: 14,
+    fontWeight: "600",
+    lineHeight: 21,
+    marginTop: 4,
+    textAlign: "center"
+  },
+  popupCount: {
+    color: colors.darkText,
+    fontSize: 13,
+    fontWeight: "800",
+    marginTop: 2,
+    textAlign: "center"
+  },
+  popupButton: {
+    alignItems: "center",
+    alignSelf: "stretch",
+    backgroundColor: colors.deepGreen,
+    borderRadius: 18,
+    marginTop: 12,
+    padding: 15
+  },
+  popupButtonText: {
+    color: colors.white,
+    fontSize: 15,
+    fontWeight: "900"
+  },
+  popupClose: {
+    marginTop: 2,
+    padding: 8
+  },
+  popupCloseText: {
+    color: colors.mutedText,
+    fontSize: 14,
+    fontWeight: "800"
   }
 });

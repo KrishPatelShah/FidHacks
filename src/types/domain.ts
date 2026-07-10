@@ -73,3 +73,51 @@ export type LearningModule = {
   title: string;
   lessons: Lesson[];
 };
+
+export type SpendCategory = "needs" | "wants" | "save" | "income";
+
+export type TransactionSource = "scanned" | "manual";
+
+export type Transaction = {
+  id: string;
+  merchant: string;
+  amount: number;
+  category: SpendCategory;
+  source: TransactionSource;
+  date: string;
+  note?: string;
+};
+
+export type RiskProfile = "Conservative" | "Moderate" | "Aggressive";
+
+export type Etf = {
+  symbol: string;
+  name: string;
+  category: PlantCategory;
+  flowerName: string;
+  price: number;
+  changePct: number;
+  spark: number[];
+  riskLabel: string;
+  fitsProfiles: RiskProfile[];
+  why: string;
+  info: string;
+};
+
+export type AchievementMetric =
+  | "flowersGrown"
+  | "streak"
+  | "totalFlowers"
+  | "budgetsLogged"
+  | "quizzesPassed"
+  | "lessonsCompleted"
+  | "investmentsPlanted";
+
+export type Achievement = {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  metric: AchievementMetric;
+  goal: number;
+};

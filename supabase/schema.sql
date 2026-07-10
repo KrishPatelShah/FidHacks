@@ -109,6 +109,34 @@ create table if not exists community_posts (
   created_at timestamptz not null default now()
 );
 
+create table if not exists transactions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references profiles(id) on delete cascade,
+  merchant text not null,
+  amount numeric not null default 0,
+  category text not null check (category in ('needs', 'wants', 'save', 'income')),
+  source text not null default 'manual' check (source in ('scanned', 'manual')),
+  note text,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists achievements (
+  id text primary key,
+  title text not null,
+  description text not null,
+  icon text not null,
+  metric text not null,
+  goal int not null
+);
+
+create table if not exists user_achievements (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references profiles(id) on delete cascade,
+  achievement_id text not null references achievements(id) on delete cascade,
+  unlocked_at timestamptz not null default now(),
+  unique (user_id, achievement_id)
+);
+
 alter table profiles enable row level security;
 alter table questionnaire_responses enable row level security;
 alter table plants enable row level security;
@@ -116,6 +144,8 @@ alter table quiz_attempts enable row level security;
 alter table budget_entries enable row level security;
 alter table user_challenges enable row level security;
 alter table community_posts enable row level security;
+alter table transactions enable row level security;
+alter table user_achievements enable row level security;
 
 create policy "users read own profile" on profiles for select using (auth.uid() = id);
 create policy "users update own profile" on profiles for update using (auth.uid() = id);
@@ -123,3 +153,5 @@ create policy "users manage own plants" on plants for all using (auth.uid() = us
 create policy "users manage own budget" on budget_entries for all using (auth.uid() = user_id);
 create policy "users manage own quiz attempts" on quiz_attempts for all using (auth.uid() = user_id);
 create policy "users manage own questionnaire" on questionnaire_responses for all using (auth.uid() = user_id);
+create policy "users manage own transactions" on transactions for all using (auth.uid() = user_id);
+create policy "users manage own achievements" on user_achievements for all using (auth.uid() = user_id);

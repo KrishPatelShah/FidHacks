@@ -1,10 +1,38 @@
+import { Ionicons } from "@expo/vector-icons";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { FlowerIcon } from "@/components/FlowerIcon";
+import { ProgressBar } from "@/components/ProgressBar";
+import { achievementDefs } from "@/data/achievements";
 import { useGarden } from "@/state/garden";
 import { colors, shadow } from "@/theme/colors";
+import { AchievementMetric } from "@/types/domain";
 
 export default function ProfileScreen() {
-  const { plants, streak, totalFlowers, lessonsCompleted, quizzesPassed, resetGarden } = useGarden();
+  const {
+    plants,
+    streak,
+    totalFlowers,
+    lessonsCompleted,
+    quizzesPassed,
+    budgetsLogged,
+    flowersGrown,
+    investmentsPlanted,
+    riskProfile,
+    unlockedAchievements,
+    resetGarden
+  } = useGarden();
+
+  const metrics: Record<AchievementMetric, number> = {
+    flowersGrown,
+    streak,
+    totalFlowers,
+    budgetsLogged,
+    quizzesPassed,
+    lessonsCompleted,
+    investmentsPlanted
+  };
+
+  const unlockedCount = unlockedAchievements.length;
 
   return (
     <ScrollView contentContainerStyle={styles.screen}>
@@ -14,7 +42,7 @@ export default function ProfileScreen() {
         </View>
         <View style={styles.headerText}>
           <Text style={styles.title}>Demo Gardener</Text>
-          <Text style={styles.subtitle}>Beginner path · Friends visibility</Text>
+          <Text style={styles.subtitle}>{riskProfile} investor · Friends visibility</Text>
         </View>
       </View>
 
@@ -56,12 +84,30 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Weekly Challenge Badges</Text>
-        <View style={styles.badgeRow}>
-          <Text style={styles.badge}>First Budget</Text>
-          <Text style={styles.badge}>APR Learner</Text>
-          <Text style={styles.badge}>Reflective Spender</Text>
+        <View style={styles.achievementsHeader}>
+          <Text style={styles.cardTitle}>Achievements</Text>
+          <Text style={styles.achievementsCount}>{unlockedCount} / {achievementDefs.length}</Text>
         </View>
+        {achievementDefs.map((achievement) => {
+          const value = metrics[achievement.metric];
+          const unlocked = unlockedAchievements.includes(achievement.id);
+          const progress = Math.min(1, value / achievement.goal);
+          return (
+            <View key={achievement.id} style={styles.achievement}>
+              <View style={[styles.achievementIcon, unlocked ? styles.achievementIconOn : styles.achievementIconOff]}>
+                <Ionicons color={unlocked ? colors.white : colors.mutedText} name={achievement.icon as keyof typeof Ionicons.glyphMap} size={20} />
+              </View>
+              <View style={styles.achievementBody}>
+                <View style={styles.achievementTop}>
+                  <Text style={styles.achievementTitle}>{achievement.title}</Text>
+                  {unlocked ? <Ionicons color={colors.deepGreen} name="checkmark-circle" size={16} /> : <Text style={styles.achievementProgressText}>{Math.min(value, achievement.goal)}/{achievement.goal}</Text>}
+                </View>
+                <Text style={styles.achievementDesc}>{achievement.description}</Text>
+                {!unlocked ? <ProgressBar progress={progress} height={7} /> : null}
+              </View>
+            </View>
+          );
+        })}
       </View>
 
       <View style={styles.note}>
@@ -187,20 +233,60 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "900"
   },
-  badgeRow: {
+  achievementsHeader: {
+    alignItems: "center",
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8
+    justifyContent: "space-between"
   },
-  badge: {
-    backgroundColor: "#E8F7F0",
-    borderRadius: 999,
+  achievementsCount: {
     color: colors.deepGreen,
+    fontSize: 14,
+    fontWeight: "900"
+  },
+  achievement: {
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    flexDirection: "row",
+    gap: 12,
+    padding: 12
+  },
+  achievementIcon: {
+    alignItems: "center",
+    borderRadius: 16,
+    height: 44,
+    justifyContent: "center",
+    width: 44
+  },
+  achievementIconOn: {
+    backgroundColor: colors.deepGreen
+  },
+  achievementIconOff: {
+    backgroundColor: "#EFE3C8"
+  },
+  achievementBody: {
+    flex: 1,
+    gap: 5
+  },
+  achievementTop: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between"
+  },
+  achievementTitle: {
+    color: colors.darkText,
+    fontSize: 15,
+    fontWeight: "900"
+  },
+  achievementProgressText: {
+    color: colors.mutedText,
     fontSize: 12,
-    fontWeight: "900",
-    overflow: "hidden",
-    paddingHorizontal: 10,
-    paddingVertical: 7
+    fontWeight: "900"
+  },
+  achievementDesc: {
+    color: colors.mutedText,
+    fontSize: 12,
+    lineHeight: 17
   },
   note: {
     backgroundColor: "#FFF4CB",

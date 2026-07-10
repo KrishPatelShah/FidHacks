@@ -1,6 +1,6 @@
 import { Plant } from "@/types/domain";
 
-export type GardenAction = "complete_lesson" | "pass_quiz" | "log_budget" | "complete_weekly_challenge" | "finish_module";
+export type GardenAction = "complete_lesson" | "pass_quiz" | "log_budget" | "complete_weekly_challenge" | "finish_module" | "plant_investment";
 
 export function applyGardenReward(plant: Plant, action: GardenAction): Plant {
   const reward = {
@@ -8,7 +8,8 @@ export function applyGardenReward(plant: Plant, action: GardenAction): Plant {
     pass_quiz: { water: 1, growth: 40 },
     log_budget: { fertilizer: 1, growth: 25 },
     complete_weekly_challenge: { sunlight: 1, water: 1, fertilizer: 1, growth: 45 },
-    finish_module: { growth: 100 }
+    finish_module: { growth: 100 },
+    plant_investment: { sunlight: 1, water: 1, growth: 55 }
   }[action];
 
   const nextGrowth = Math.min(100, plant.growth + reward.growth);

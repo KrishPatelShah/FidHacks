@@ -4,11 +4,21 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-nati
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { questionnaireCategories } from "@/data/questionnaire";
 import { recommendPath } from "@/lib/recommendPath";
+import { useGarden } from "@/state/garden";
 import { colors, shadow } from "@/theme/colors";
+import { RiskProfile } from "@/types/domain";
 
 export default function QuestionnaireScreen() {
+  const { setRiskProfile } = useGarden();
   const [ratings, setRatings] = useState<Record<string, number>>({});
   const path = recommendPath(ratings);
+
+  function handleStart() {
+    const investing = ratings.investingConfidence ?? 0;
+    const profile: RiskProfile = investing >= 4 ? "Aggressive" : investing >= 3 ? "Moderate" : "Conservative";
+    setRiskProfile(profile);
+    router.replace("/(tabs)/garden");
+  }
 
   return (
     <ScrollView contentContainerStyle={styles.screen}>
@@ -35,7 +45,7 @@ export default function QuestionnaireScreen() {
         <Text style={styles.recommendationLabel}>Recommended path</Text>
         <Text style={styles.recommendationValue}>{path}</Text>
       </View>
-      <PrimaryButton label="Start My Garden" onPress={() => router.replace("/(tabs)/garden")} />
+      <PrimaryButton label="Start My Garden" onPress={handleStart} />
     </ScrollView>
   );
 }

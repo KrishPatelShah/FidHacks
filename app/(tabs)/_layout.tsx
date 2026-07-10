@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { View } from "react-native";
+import { AchievementCelebration } from "@/components/AchievementCelebration";
 import { FloatingSunflower } from "@/components/FloatingSunflower";
 import { colors } from "@/theme/colors";
 
@@ -33,6 +34,7 @@ export default function TabsLayout() {
         <Tabs.Screen name="profile" options={{ href: null }} />
       </Tabs>
       <FloatingSunflower />
+      <AchievementCelebration />
     </View>
   );
 }

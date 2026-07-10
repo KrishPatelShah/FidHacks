@@ -51,7 +51,7 @@ export default function QuestionnaireScreen() {
       saveConfidenceAssessment(assessment, riskProfileFromAssessment(assessment));
       setExperienceLevel(assessment.level.toLowerCase() as ExperienceLevel);
       // Best-effort: persist to the FastAPI backend (also updates the profile path).
-      submitQuestionnaireRemote(toQuestionnairePayload(responses));
+      submitQuestionnaireRemote(toQuestionnairePayload(responses)).catch(() => {});
       setResult(assessment);
     } finally {
       setSaving(false);

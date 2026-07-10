@@ -23,12 +23,17 @@ export default function TabsLayout() {
             borderTopColor: "#E9D8B9",
             height: 86,
             paddingBottom: 22,
+            paddingHorizontal: 18,
             paddingTop: 10
           },
+          tabBarItemStyle: {
+            paddingHorizontal: 0
+          },
           tabBarLabelStyle: {
-            fontSize: 12,
+            fontSize: 11,
             fontWeight: "800"
-          }
+          },
+          tabBarAllowFontScaling: false
         }}
       >
         <Tabs.Screen name="garden" options={{ title: "Garden", tabBarIcon: ({ color }) => <Ionicons color={color} name="flower" size={22} /> }} />

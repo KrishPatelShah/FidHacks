@@ -179,9 +179,13 @@ export default function BudgetScreen() {
   function handleManualSave() {
     const amount = Number(draftAmount.replace(/[^0-9.]/g, ""));
     if (!draftMerchant.trim() || !Number.isFinite(amount) || amount <= 0) return;
-    addTransaction({ merchant: draftMerchant.trim(), amount, category: draftCategory, source: "manual" });
+    const result = addTransaction({ merchant: draftMerchant.trim(), amount, category: draftCategory, source: "manual" });
     logBudget();
-    setSavedNote(`Added ${draftMerchant.trim()} · ${formatMoneyExact(amount)}`);
+    setSavedNote(
+      result.firstEntry
+        ? `First budget bloom! Added ${draftMerchant.trim()} · ${formatMoneyExact(amount)} — a ${result.flowerName} grew in your garden.`
+        : `Added ${draftMerchant.trim()} · ${formatMoneyExact(amount)}`
+    );
     setDraftMerchant("");
     setDraftAmount("");
     setDraftCategory("needs");

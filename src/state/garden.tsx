@@ -63,6 +63,13 @@ const investmentFlowerNames: Partial<Record<PlantCategory, string>> = {
   stocks: "Red Poppy"
 };
 
+export type AddTransactionResult = {
+  // True when this was the user's very first budget entry, which blooms the
+  // budgeting flower named in flowerName.
+  firstEntry: boolean;
+  flowerName: string | null;
+};
+
 type GardenContextValue = {
   hydrated: boolean;
   loadingAccount: boolean;
@@ -89,7 +96,7 @@ type GardenContextValue = {
   celebration: Achievement | null;
   logBudget: (category?: PlantCategory) => void;
   plantInvestment: (category: PlantCategory) => PlantInvestmentResult;
-  addTransaction: (input: { merchant: string; amount: number; category: SpendCategory; source: TransactionSource; note?: string }) => void;
+  addTransaction: (input: { merchant: string; amount: number; category: SpendCategory; source: TransactionSource; note?: string }) => AddTransactionResult;
   removeTransaction: (id: string) => void;
   loadSampleTransactions: () => void;
   commitReceipt: (receipt: ParsedReceipt) => ReceiptCommitResult;
@@ -109,6 +116,20 @@ const GardenContext = createContext<GardenContextValue | null>(null);
 
 function cloneDemo(): Plant[] {
   return demoPlants.map((plant) => ({ ...plant }));
+}
+
+// The plant categories with nothing grown yet: an empty clearing.
+function emptyGarden(): Plant[] {
+  return demoPlants.map((plant) => ({
+    ...plant,
+    quantity: 0,
+    growth: 0,
+    stage: 0,
+    water: 0,
+    sunlight: 0,
+    fertilizer: 0,
+    unlocked: false
+  }));
 }
 
 function startOfDayMs(d: Date): number {
@@ -467,19 +488,41 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   );
 
   const addTransaction = useCallback(
-    (input: { merchant: string; amount: number; category: SpendCategory; source: TransactionSource; note?: string }) => {
+    (input: { merchant: string; amount: number; category: SpendCategory; source: TransactionSource; note?: string }): AddTransactionResult => {
+      const now = new Date().toISOString();
       const txn: Transaction = {
         id: nextId(),
         merchant: input.merchant,
         amount: input.amount,
         category: input.category,
         source: input.source,
-        date: new Date().toISOString(),
+        date: now,
         note: input.note
       };
+      // The very first budget entry blooms the budgeting flower, mirroring the
+      // receipt-scan reward, so starting a budget feels like planting something.
+      const firstEntry = transactions.length === 0;
       setTransactions((current) => [txn, ...current]);
+      if (!firstEntry) return { firstEntry: false, flowerName: null };
+      const flowerName = plants.find((plant) => plant.type === "budgeting")?.flowerName ?? "Daisy";
+      setPlants((current) =>
+        current.map((plant) =>
+          plant.type === "budgeting"
+            ? {
+                ...plant,
+                unlocked: true,
+                quantity: plant.quantity + 1,
+                growth: Math.min(100, plant.growth + 10),
+                stage: plant.stage + 1,
+                updatedAt: now
+              }
+            : plant
+        )
+      );
+      setFlowersGrown((count) => count + 1);
+      return { firstEntry: true, flowerName };
     },
-    []
+    [transactions.length, plants]
   );
 
   const removeTransaction = useCallback((id: string) => {
@@ -536,18 +579,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   // A brand-new user finishing onboarding starts with an empty clearing: the
   // plant categories exist but nothing has been grown yet.
   const startFreshGarden = useCallback(() => {
-    setPlants(
-      demoPlants.map((plant) => ({
-        ...plant,
-        quantity: 0,
-        growth: 0,
-        stage: 0,
-        water: 0,
-        sunlight: 0,
-        fertilizer: 0,
-        unlocked: false
-      }))
-    );
+    setPlants(emptyGarden());
     // Creating the account (finishing onboarding) is the first step: start the
     // streak at day 1 rather than 0.
     setStreak(1);
@@ -573,7 +605,8 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     setReceiptsScanned(0);
     setStreak(0);
     setLastActiveISO(null);
-    setPlants(cloneDemo());
+    // A reset means a truly empty garden — not the pre-grown demo plants.
+    setPlants(emptyGarden());
     setLessonsCompleted(0);
     setQuizzesPassed(0);
     setCompletedLessonIds([]);
@@ -584,8 +617,12 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     setConfidenceAssessment(null);
     setUnlockedAchievements([]);
     setCelebrationQueue([]);
+    setAccountError(null);
     seededRef.current = false;
     clearAssessment().catch(() => {});
+    // Sign out of the demo backend session; otherwise the next app launch
+    // bootstraps the server's seeded garden right back over the reset state.
+    clearAccessToken().catch(() => {});
   }, []);
 
   const value = useMemo<GardenContextValue>(

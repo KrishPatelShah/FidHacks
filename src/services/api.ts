@@ -227,28 +227,34 @@ export async function getLesson(id: string) {
 }
 
 export async function completeLesson(id: string) {
+  // Signed out or offline: lesson progress is tracked client-side instead.
+  if (!(await getAccessToken())) return {};
   try {
     return await request<{ lessons_completed?: number }>(`/api/lessons/${encodeURIComponent(id)}/complete`, { method: "POST" }, true);
   } catch (error) {
-    // Offline: lesson progress is tracked client-side after the quiz instead.
-    if (isBackendUnavailable(error)) return {};
+    if (isBackendUnavailable(error) || (error instanceof ApiError && error.status === 401)) return {};
     throw error;
   }
 }
 
+function localQuizQuestions(lessonId: string): QuizQuestion[] {
+  const category = findLesson(lessonId)?.category ?? "budgeting";
+  return localQuizForCategory(category).map((question) => ({
+    id: question.id,
+    prompt: question.prompt,
+    options: question.options,
+    explanation: question.explanation
+  }));
+}
+
 export async function getQuizQuestions(lessonId: string): Promise<QuizQuestion[]> {
+  // Signed out, attempts are graded locally (see submitQuizAttempt), so serve
+  // the local question bank too — server question IDs would never match it.
+  if (!(await getAccessToken())) return localQuizQuestions(lessonId);
   try {
     return await request<QuizQuestion[]>(`/api/quizzes/${encodeURIComponent(lessonId)}`);
   } catch (error) {
-    if (isBackendUnavailable(error)) {
-      const category = findLesson(lessonId)?.category ?? "budgeting";
-      return localQuizForCategory(category).map((question) => ({
-        id: question.id,
-        prompt: question.prompt,
-        options: question.options,
-        explanation: question.explanation
-      }));
-    }
+    if (isBackendUnavailable(error)) return localQuizQuestions(lessonId);
     throw error;
   }
 }
@@ -275,13 +281,18 @@ function gradeLocalQuiz(lessonId: string, answers: Record<string, number>): Quiz
 }
 
 export async function submitQuizAttempt(lessonId: string, answers: Record<string, number>): Promise<QuizAttemptResult> {
+  // Not signed in (e.g. after a local reset): grade entirely client-side rather
+  // than letting the server reject the attempt with a bearer-token error.
+  if (!(await getAccessToken())) return gradeLocalQuiz(lessonId, answers);
   let result: ApiQuizAttempt;
   try {
     result = await request<ApiQuizAttempt>(`/api/quizzes/${encodeURIComponent(lessonId)}/attempts`, {
       method: "POST", body: JSON.stringify({ answers })
     }, true);
   } catch (error) {
-    if (isBackendUnavailable(error)) return gradeLocalQuiz(lessonId, answers);
+    if (isBackendUnavailable(error) || (error instanceof ApiError && error.status === 401)) {
+      return gradeLocalQuiz(lessonId, answers);
+    }
     throw error;
   }
   return {

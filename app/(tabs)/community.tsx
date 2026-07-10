@@ -22,12 +22,38 @@ const phoneContacts = [
   { id: "contact_3", name: "Morgan Lee", detail: "In your contacts" }
 ];
 
+type CommunityPost = {
+  id: string;
+  content: string;
+  flowerName: string;
+  author?: string;
+};
+
 export default function CommunityScreen() {
-  const { unlockedAchievements, totalFlowers, streak } = useGarden();
+  const { unlockedAchievements, totalFlowers, streak, plants } = useGarden();
   const [tab, setTab] = useState<Tab>("leaderboard");
   const [query, setQuery] = useState("");
   const [requested, setRequested] = useState<string[]>([]);
   const [contactsOpen, setContactsOpen] = useState(false);
+  const [posts, setPosts] = useState<CommunityPost[]>(demoCommunityPosts);
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [postText, setPostText] = useState("");
+  const [postFlower, setPostFlower] = useState<string | null>(null);
+
+  const myFlowers = useMemo(() => {
+    const names = plants.filter((plant) => plant.unlocked).map((plant) => plant.flowerName);
+    return names.length ? names : ["Daisy"];
+  }, [plants]);
+
+  const submitPost = () => {
+    const content = postText.trim();
+    if (!content) return;
+    const flowerName = postFlower ?? myFlowers[0];
+    setPosts((current) => [{ id: `post_local_${Date.now()}`, content, flowerName, author: "You" }, ...current]);
+    setPostText("");
+    setPostFlower(null);
+    setComposerOpen(false);
+  };
 
   const myPills = achievementDefs.filter((a) => unlockedAchievements.includes(a.id)).slice(0, 4);
 
@@ -192,20 +218,67 @@ export default function CommunityScreen() {
 
       {tab === "posts" ? (
         <View style={styles.stack}>
-          {demoCommunityPosts.map((post) => (
+          <TouchableOpacity onPress={() => setComposerOpen(true)} style={styles.composeButton}>
+            <Ionicons color={colors.white} name="create" size={18} />
+            <Text style={styles.composeButtonText}>Share a milestone</Text>
+          </TouchableOpacity>
+          {posts.map((post) => (
             <View key={post.id} style={styles.post}>
               <View style={styles.postFlower}>
                 <FlowerIcon name={post.flowerName} size={46} />
               </View>
               <View style={styles.postTextCol}>
-                <Text style={styles.postLabel}>Milestone</Text>
+                <Text style={styles.postLabel}>{post.author === "You" ? "Your milestone" : "Milestone"}</Text>
                 <Text style={styles.cardTitle}>{post.content}</Text>
-                <Text style={styles.copy}>Unlocked the {post.flowerName} · shared as a progress post.</Text>
+                <Text style={styles.copy}>
+                  {post.author === "You" ? "You shared" : "Unlocked"} the {post.flowerName} · shared as a progress post.
+                </Text>
               </View>
             </View>
           ))}
         </View>
       ) : null}
+
+      <Modal transparent animationType="slide" visible={composerOpen} onRequestClose={() => setComposerOpen(false)}>
+        <View style={styles.msgBackdrop}>
+          <View style={styles.msgCard}>
+            <View style={styles.msgHeader}>
+              <Text style={styles.msgTitle}>Share a milestone</Text>
+              <Pressable onPress={() => setComposerOpen(false)}>
+                <Ionicons color={colors.darkText} name="close" size={22} />
+              </Pressable>
+            </View>
+            <Text style={styles.msgSub}>Progress only — never share money amounts.</Text>
+            <TextInput
+              multiline
+              onChangeText={setPostText}
+              placeholder="e.g. I finished the budgeting module!"
+              placeholderTextColor={colors.mutedText}
+              style={styles.composeInput}
+              value={postText}
+            />
+            <Text style={styles.composePickerLabel}>Attach a flower</Text>
+            <View style={styles.badgeRow}>
+              {myFlowers.map((name) => {
+                const active = (postFlower ?? myFlowers[0]) === name;
+                return (
+                  <TouchableOpacity key={name} onPress={() => setPostFlower(name)} style={[styles.flowerChip, active && styles.flowerChipActive]}>
+                    <FlowerIcon name={name} size={22} />
+                    <Text style={[styles.flowerChipText, active && styles.flowerChipTextActive]}>{name}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            <TouchableOpacity
+              disabled={!postText.trim()}
+              onPress={submitPost}
+              style={[styles.composeSubmit, !postText.trim() && styles.composeSubmitDisabled]}
+            >
+              <Text style={styles.composeSubmitText}>Post to community</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       <Modal transparent animationType="slide" visible={contactsOpen} onRequestClose={() => setContactsOpen(false)}>
         <View style={styles.msgBackdrop}>
@@ -591,6 +664,77 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     marginBottom: 4
+  },
+  composeButton: {
+    alignItems: "center",
+    backgroundColor: colors.deepGreen,
+    borderRadius: 18,
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "center",
+    paddingVertical: 14
+  },
+  composeButtonText: {
+    color: colors.white,
+    fontSize: 15,
+    fontWeight: "900"
+  },
+  composeInput: {
+    backgroundColor: colors.card,
+    borderColor: colors.line,
+    borderRadius: 16,
+    borderWidth: 1,
+    color: colors.darkText,
+    fontSize: 15,
+    fontWeight: "700",
+    minHeight: 88,
+    padding: 14,
+    textAlignVertical: "top"
+  },
+  composePickerLabel: {
+    color: colors.mutedText,
+    fontSize: 12,
+    fontWeight: "900",
+    marginTop: 4,
+    textTransform: "uppercase"
+  },
+  flowerChip: {
+    alignItems: "center",
+    backgroundColor: colors.card,
+    borderColor: colors.line,
+    borderRadius: 999,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6
+  },
+  flowerChipActive: {
+    backgroundColor: "#E8F7F0",
+    borderColor: colors.deepGreen
+  },
+  flowerChipText: {
+    color: colors.mutedText,
+    fontSize: 12,
+    fontWeight: "900"
+  },
+  flowerChipTextActive: {
+    color: colors.deepGreen
+  },
+  composeSubmit: {
+    alignItems: "center",
+    backgroundColor: colors.deepGreen,
+    borderRadius: 18,
+    marginTop: 8,
+    paddingVertical: 14
+  },
+  composeSubmitDisabled: {
+    opacity: 0.5
+  },
+  composeSubmitText: {
+    color: colors.white,
+    fontSize: 15,
+    fontWeight: "900"
   },
   msgPrompt: {
     alignItems: "center",

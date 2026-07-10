@@ -72,7 +72,7 @@ export default function GardenDashboardScreen() {
 
       <View style={styles.header}>
         <Text style={styles.eyebrow}>Flourish</Text>
-        <Text style={styles.title}>Your money habits are blooming.</Text>
+        <Text style={styles.title}>Your money habits are flourishing.</Text>
       </View>
 
       <GardenPreview plants={plants} />

@@ -60,7 +60,7 @@ const categoryInfo: Record<PlantCategory, { label: string; meaning: string; modu
   },
   funds: {
     label: "Index & Mutual Funds",
-    meaning: "Diversified, medium-risk investments — the balanced middle of the ladder.",
+    meaning: "Diversified, medium-risk investments - the balanced middle of the ladder.",
     moduleId: "module_investing"
   },
   stocks: {

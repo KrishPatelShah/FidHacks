@@ -29,7 +29,7 @@ export default function StocksScreen() {
     if (planted[etf.symbol]) return;
     const reward = plantInvestment(etf.category);
     setPlanted((current) => ({ ...current, [etf.symbol]: true }));
-    setPlantNote(`You planted ${etf.symbol} — a new ${reward.flowerName} bloomed in your garden (${reward.quantity} total).`);
+    setPlantNote(`You planted ${etf.symbol} - a new ${reward.flowerName} bloomed in your garden (${reward.quantity} total).`);
   }
 
   // Beginners haven't unlocked investing yet, so show a locked gate instead.
@@ -193,7 +193,7 @@ export default function StocksScreen() {
 
       <View style={styles.disclaimer}>
         <Text style={styles.disclaimerTitle}>Simulated & educational only</Text>
-        <Text style={styles.disclaimerCopy}>Prices and picks are mock data for learning. This is not investment advice. Planting grows the matching flower in your garden — it simulates a position, it does not buy anything real.</Text>
+        <Text style={styles.disclaimerCopy}>Prices and picks are mock data for learning. This is not investment advice. Planting grows the matching flower in your garden - it simulates a position, it does not buy anything real.</Text>
       </View>
 
       <View style={styles.ladderCard}>

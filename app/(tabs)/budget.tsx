@@ -397,7 +397,7 @@ export default function BudgetScreen() {
       <View style={styles.list}>
         {filtered.length === 0 ? (
           <Text style={styles.empty}>
-            {hasData ? "No purchases match that filter yet." : "Nothing here yet — scan a receipt or add a purchase to begin."}
+            {hasData ? "No purchases match that filter yet." : "Nothing here yet - scan a receipt or add a purchase to begin."}
           </Text>
         ) : (
           filtered.map((txn) => {

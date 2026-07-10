@@ -40,16 +40,19 @@ export const demoCommunityPosts = [
   {
     id: "post_1",
     templateType: "first_budget",
-    content: "I completed my first budget."
+    content: "I completed my first budget.",
+    flowerName: "Daisy"
   },
   {
     id: "post_2",
     templateType: "learned_roth_ira",
-    content: "I learned what a Roth IRA is."
+    content: "I learned what a Roth IRA is.",
+    flowerName: "Orchid"
   },
   {
     id: "post_3",
     templateType: "weekly_challenge",
-    content: "I completed this week's challenge."
+    content: "I completed this week's challenge.",
+    flowerName: "Marigold"
   }
 ];

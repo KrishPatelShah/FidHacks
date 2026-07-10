@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { FlowerIcon } from "@/components/FlowerIcon";
 import { GardenPreview } from "@/components/GardenPreview";
 import { achievementDefs } from "@/data/achievements";
 import { demoCommunityPosts, demoDirectory, demoFriendGardens, demoLeaderboard, suggestedMessages } from "@/data/community";
@@ -15,11 +16,22 @@ const tabLabels: Record<Tab, string> = { leaderboard: "Leaders", gardens: "Garde
 const rankColors = ["#F4B740", "#B9C4CC", "#C98A5E"];
 
 export default function CommunityScreen() {
-  const { unlockedAchievements } = useGarden();
+  const { unlockedAchievements, totalFlowers, streak } = useGarden();
   const [tab, setTab] = useState<Tab>("leaderboard");
   const [messageTo, setMessageTo] = useState<string | null>(null);
 
   const myPills = achievementDefs.filter((a) => unlockedAchievements.includes(a.id)).slice(0, 4);
+
+  // Replace the placeholder "you" row with the player's real garden stats, then
+  // re-rank so their position reflects their actual flower count.
+  const myTopBadge = [...achievementDefs].reverse().find((a) => unlockedAchievements.includes(a.id))?.title ?? "Just Started";
+  const leaderboard = demoLeaderboard
+    .map((row) =>
+      row.userId === "you"
+        ? { ...row, plantsThisWeek: totalFlowers, streakLevel: `${streak} day streak`, topBadge: myTopBadge }
+        : row
+    )
+    .sort((a, b) => b.plantsThisWeek - a.plantsThisWeek);
 
   return (
     <ScrollView contentContainerStyle={styles.screen}>
@@ -53,7 +65,7 @@ export default function CommunityScreen() {
       {tab === "leaderboard" ? (
         <View style={styles.stack}>
           <Text style={styles.sectionTitle}>Top growers this week</Text>
-          {demoLeaderboard.map((row, index) => {
+          {leaderboard.map((row, index) => {
             const isYou = row.userId === "you";
             return (
               <View key={row.userId} style={[styles.rankCard, isYou && styles.rankCardYou]}>
@@ -119,9 +131,14 @@ export default function CommunityScreen() {
         <View style={styles.stack}>
           {demoCommunityPosts.map((post) => (
             <View key={post.id} style={styles.post}>
-              <Text style={styles.postLabel}>Milestone</Text>
-              <Text style={styles.cardTitle}>{post.content}</Text>
-              <Text style={styles.copy}>Shared as a template-based progress post.</Text>
+              <View style={styles.postFlower}>
+                <FlowerIcon name={post.flowerName} size={46} />
+              </View>
+              <View style={styles.postTextCol}>
+                <Text style={styles.postLabel}>Milestone</Text>
+                <Text style={styles.cardTitle}>{post.content}</Text>
+                <Text style={styles.copy}>Unlocked the {post.flowerName} · shared as a progress post.</Text>
+              </View>
             </View>
           ))}
         </View>
@@ -372,11 +389,25 @@ const styles = StyleSheet.create({
     fontWeight: "900"
   },
   post: {
+    alignItems: "center",
     backgroundColor: colors.card,
     borderRadius: 26,
-    gap: 8,
+    flexDirection: "row",
+    gap: 14,
     padding: 18,
     ...shadow
+  },
+  postFlower: {
+    alignItems: "center",
+    backgroundColor: "#E8F7F0",
+    borderRadius: 20,
+    height: 62,
+    justifyContent: "center",
+    width: 62
+  },
+  postTextCol: {
+    flex: 1,
+    gap: 6
   },
   postLabel: {
     color: colors.deepGreen,

@@ -5,6 +5,7 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-nati
 import { FlowerIcon } from "@/components/FlowerIcon";
 import { Sparkline } from "@/components/Sparkline";
 import { etfs, riskProfileCopy, timeRanges, TimeRange } from "@/data/investments";
+import { canAccessCategory, investingUnlocked } from "@/lib/levels";
 import { useGarden } from "@/state/garden";
 import { colors, shadow } from "@/theme/colors";
 import { Etf } from "@/types/domain";
@@ -17,7 +18,7 @@ const ladder = [
 ];
 
 export default function StocksScreen() {
-  const { riskProfile, plantInvestment, plants } = useGarden();
+  const { riskProfile, plantInvestment, plants, experienceLevel } = useGarden();
   const [range, setRange] = useState<TimeRange>("1M");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [planted, setPlanted] = useState<Record<string, boolean>>({});
@@ -26,6 +27,52 @@ export default function StocksScreen() {
     plantInvestment(etf.category);
     setPlanted((current) => ({ ...current, [etf.symbol]: true }));
   }
+
+  // Beginners haven't unlocked investing yet — show a locked gate instead.
+  if (!investingUnlocked(experienceLevel)) {
+    return (
+      <ScrollView contentContainerStyle={styles.screen}>
+        <View style={styles.header}>
+          <Text style={styles.eyebrow}>Invest Garden</Text>
+          <Text style={styles.title}>Investing unlocks soon.</Text>
+        </View>
+        <View style={styles.lockCard}>
+          <View style={styles.lockBadge}>
+            <Ionicons color={colors.deepGreen} name="lock-closed" size={34} />
+          </View>
+          <Text style={styles.lockTitle}>Locked at the Beginner level</Text>
+          <Text style={styles.lockCopy}>
+            Master budgeting and building your savings first. Reach the Intermediate level to unlock low-risk investing
+            like bonds — then mutual funds and stocks at Advanced.
+          </Text>
+          <Link href="/(tabs)/learn" asChild>
+            <TouchableOpacity style={styles.lockButton}>
+              <Ionicons color={colors.white} name="book" size={18} />
+              <Text style={styles.lockButtonText}>Build your basics in Learn</Text>
+            </TouchableOpacity>
+          </Link>
+        </View>
+        <View style={styles.ladderCard}>
+          <Text style={styles.ladderTitle}>Here's what's coming</Text>
+          {ladder.map((item, index) => (
+            <View key={item.flower} style={styles.ladderRow}>
+              <View style={styles.rank}>
+                <Text style={styles.rankText}>{index + 1}</Text>
+              </View>
+              <FlowerIcon name={item.flower} size={34} />
+              <View style={styles.ladderText}>
+                <Text style={styles.ladderLabel}>{item.label}</Text>
+                <Text style={styles.ladderRisk}>{item.risk}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+    );
+  }
+
+  const accessibleEtfs = etfs.filter((etf) => canAccessCategory(experienceLevel, etf.category));
+  const lockedEtfs = etfs.filter((etf) => !canAccessCategory(experienceLevel, etf.category));
 
   return (
     <ScrollView contentContainerStyle={styles.screen}>
@@ -58,7 +105,7 @@ export default function StocksScreen() {
         ))}
       </View>
 
-      {etfs.map((etf) => {
+      {accessibleEtfs.map((etf) => {
         const positive = etf.changePct >= 0;
         const fits = etf.fitsProfiles.includes(riskProfile);
         const isPlanted = planted[etf.symbol];
@@ -115,6 +162,18 @@ export default function StocksScreen() {
           </View>
         );
       })}
+
+      {lockedEtfs.map((etf) => (
+        <View key={etf.symbol} style={styles.lockedEtfCard}>
+          <View style={styles.lockedIcon}>
+            <Ionicons color={colors.mutedText} name="lock-closed" size={20} />
+          </View>
+          <View style={styles.lockedEtfText}>
+            <Text style={styles.lockedEtfSymbol}>{etf.symbol} · {etf.name}</Text>
+            <Text style={styles.lockedEtfNote}>{etf.riskLabel} — unlocks at the Advanced level.</Text>
+          </View>
+        </View>
+      ))}
 
       <View style={styles.disclaimer}>
         <Text style={styles.disclaimerTitle}>Simulated & educational only</Text>
@@ -461,5 +520,80 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "700",
     textAlign: "center"
+  },
+  lockCard: {
+    alignItems: "center",
+    backgroundColor: colors.card,
+    borderRadius: 26,
+    gap: 12,
+    padding: 24,
+    ...shadow
+  },
+  lockBadge: {
+    alignItems: "center",
+    backgroundColor: "#E8F7F0",
+    borderRadius: 999,
+    height: 64,
+    justifyContent: "center",
+    width: 64
+  },
+  lockTitle: {
+    color: colors.darkText,
+    fontSize: 20,
+    fontWeight: "900",
+    textAlign: "center"
+  },
+  lockCopy: {
+    color: colors.mutedText,
+    fontSize: 14,
+    lineHeight: 21,
+    textAlign: "center"
+  },
+  lockButton: {
+    alignItems: "center",
+    backgroundColor: colors.deepGreen,
+    borderRadius: 18,
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "center",
+    marginTop: 4,
+    paddingHorizontal: 18,
+    paddingVertical: 14
+  },
+  lockButtonText: {
+    color: colors.white,
+    fontSize: 15,
+    fontWeight: "900"
+  },
+  lockedEtfCard: {
+    alignItems: "center",
+    backgroundColor: "#F3ECDD",
+    borderRadius: 22,
+    flexDirection: "row",
+    gap: 12,
+    opacity: 0.85,
+    padding: 16
+  },
+  lockedIcon: {
+    alignItems: "center",
+    backgroundColor: "#E4D6BC",
+    borderRadius: 14,
+    height: 40,
+    justifyContent: "center",
+    width: 40
+  },
+  lockedEtfText: {
+    flex: 1,
+    gap: 3
+  },
+  lockedEtfSymbol: {
+    color: colors.darkText,
+    fontSize: 15,
+    fontWeight: "900"
+  },
+  lockedEtfNote: {
+    color: colors.mutedText,
+    fontSize: 13,
+    fontWeight: "700"
   }
 });

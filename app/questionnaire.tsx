@@ -9,7 +9,7 @@ import { colors, shadow } from "@/theme/colors";
 import { RiskProfile } from "@/types/domain";
 
 export default function QuestionnaireScreen() {
-  const { setRiskProfile } = useGarden();
+  const { setRiskProfile, setExperienceLevel, startFreshGarden } = useGarden();
   const [ratings, setRatings] = useState<Record<string, number>>({});
   const path = recommendPath(ratings);
 
@@ -17,6 +17,9 @@ export default function QuestionnaireScreen() {
     const investing = ratings.investingConfidence ?? 0;
     const profile: RiskProfile = investing >= 4 ? "Aggressive" : investing >= 3 ? "Moderate" : "Conservative";
     setRiskProfile(profile);
+    setExperienceLevel(path);
+    // Every user begins with an empty clearing — no flowers until they earn them.
+    startFreshGarden();
     router.replace("/(tabs)/garden");
   }
 

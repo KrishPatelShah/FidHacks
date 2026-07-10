@@ -1,8 +1,12 @@
+import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { FlowerIcon } from "@/components/FlowerIcon";
 import { learningModules } from "@/data/lessons";
+import { difficultyUnlocked } from "@/lib/levels";
+import { useGarden } from "@/state/garden";
 import { colors, shadow } from "@/theme/colors";
+import { ExperienceLevel } from "@/types/domain";
 
 const moduleDetails: Record<string, { topics: string; progress: number; completed: string; reward: string; difficulty: string; flower: string; accent: string }> = {
   budgeting: {
@@ -62,6 +66,8 @@ const moduleDetails: Record<string, { topics: string; progress: number; complete
 };
 
 export default function LearningPathScreen() {
+  const { experienceLevel } = useGarden();
+
   return (
     <ScrollView contentContainerStyle={styles.screen}>
       <View style={styles.header}>
@@ -72,28 +78,56 @@ export default function LearningPathScreen() {
       {learningModules.map((module) => {
         const detail = moduleDetails[module.category] ?? moduleDetails.budgeting;
         const firstLesson = module.lessons[0];
+        const difficulty = detail.difficulty.toLowerCase() as ExperienceLevel;
+        const unlocked = difficultyUnlocked(experienceLevel, difficulty);
+
+        const body = (
+          <>
+            <View style={[styles.iconWrap, { backgroundColor: `${detail.accent}33` }]}>
+              <FlowerIcon name={detail.flower} size={54} />
+              {unlocked ? null : (
+                <View style={styles.lockOverlay}>
+                  <Ionicons color={colors.white} name="lock-closed" size={20} />
+                </View>
+              )}
+            </View>
+            <View style={styles.moduleBody}>
+              <View style={styles.moduleHeader}>
+                <Text style={styles.moduleTitle}>{module.flowerName} — {module.title}</Text>
+                <Text style={[styles.badge, { color: detail.accent }]}>{detail.difficulty}</Text>
+              </View>
+              <Text style={styles.topics}>{detail.topics}</Text>
+              {unlocked ? (
+                <>
+                  <View style={styles.progressTrack}>
+                    <View style={[styles.progressFill, { width: `${detail.progress * 100}%`, backgroundColor: detail.accent }]} />
+                  </View>
+                  <View style={styles.metaRow}>
+                    <Text style={styles.meta}>{detail.completed}</Text>
+                    <Text style={styles.reward}>{detail.reward}</Text>
+                  </View>
+                </>
+              ) : (
+                <View style={styles.lockedRow}>
+                  <Ionicons color={colors.mutedText} name="lock-closed" size={13} />
+                  <Text style={styles.lockedNote}>Unlocks at the {detail.difficulty} level</Text>
+                </View>
+              )}
+            </View>
+          </>
+        );
+
+        if (!unlocked) {
+          return (
+            <View key={module.id} style={[styles.module, styles.moduleLocked]}>
+              {body}
+            </View>
+          );
+        }
 
         return (
           <Link key={module.id} href={`/lesson/${firstLesson.id}`} asChild>
-            <TouchableOpacity style={styles.module}>
-              <View style={[styles.iconWrap, { backgroundColor: `${detail.accent}33` }]}>
-                <FlowerIcon name={detail.flower} size={54} />
-              </View>
-              <View style={styles.moduleBody}>
-                <View style={styles.moduleHeader}>
-                  <Text style={styles.moduleTitle}>{module.flowerName} — {module.title}</Text>
-                  <Text style={[styles.badge, { color: detail.accent }]}>{detail.difficulty}</Text>
-                </View>
-                <Text style={styles.topics}>{detail.topics}</Text>
-                <View style={styles.progressTrack}>
-                  <View style={[styles.progressFill, { width: `${detail.progress * 100}%`, backgroundColor: detail.accent }]} />
-                </View>
-                <View style={styles.metaRow}>
-                  <Text style={styles.meta}>{detail.completed}</Text>
-                  <Text style={styles.reward}>{detail.reward}</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
+            <TouchableOpacity style={styles.module}>{body}</TouchableOpacity>
           </Link>
         );
       })}
@@ -138,7 +172,33 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     height: 70,
     justifyContent: "center",
+    overflow: "hidden",
+    position: "relative",
     width: 70
+  },
+  lockOverlay: {
+    alignItems: "center",
+    backgroundColor: "rgba(23, 59, 50, 0.55)",
+    borderRadius: 24,
+    bottom: 0,
+    justifyContent: "center",
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 0
+  },
+  moduleLocked: {
+    opacity: 0.72
+  },
+  lockedRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 6
+  },
+  lockedNote: {
+    color: colors.mutedText,
+    fontSize: 12,
+    fontWeight: "800"
   },
   moduleBody: {
     flex: 1,

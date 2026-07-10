@@ -90,6 +90,8 @@ export type Transaction = {
 
 export type RiskProfile = "Conservative" | "Moderate" | "Aggressive";
 
+export type ExperienceLevel = "beginner" | "intermediate" | "advanced";
+
 export type Etf = {
   symbol: string;
   name: string;

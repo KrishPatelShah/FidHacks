@@ -197,7 +197,9 @@ async def test_quiz_attempt_is_scored_and_persisted(
         },
     ]
     assert body["earned"] == {"sunlight": 1, "water": 1}
-    assert body["updated_plant"]["growth"] == 0
+    # Every completed lesson blooms a new flower; growth accumulates toward the
+    # next stage and is capped at 100 (90 + 20 -> 100).
+    assert body["updated_plant"]["growth"] == 100
     assert body["updated_plant"]["quantity"] == before_quantity + 1
     assert body["updated_plant"]["stage"] == before_stage + 1
     assert body["profile"]["id"] == str(DEMO_USER_ID)
@@ -209,14 +211,16 @@ async def test_quiz_attempt_is_scored_and_persisted(
     assert attempts[0].score == 2
     assert attempts[0].passed is True
 
+    # Re-passing the same lesson blooms another flower (rewards apply on every
+    # pass), while the distinct lessons/quizzes counts stay at 1.
     repeated = await client.post(
         "/api/quizzes/budgeting-expected-actual/attempts",
         json={"answers": {"budgeting-expected-actual-q1": 1, "budgeting-expected-actual-q2": 1}},
         headers=auth_headers,
     )
     assert repeated.status_code == 200
-    assert repeated.json()["earned"] == {}
-    assert repeated.json()["updated_plant"] is None
+    assert repeated.json()["earned"] == {"sunlight": 1, "water": 1}
+    assert repeated.json()["updated_plant"]["quantity"] == before_quantity + 2
     assert repeated.json()["lessons_completed"] == 1
     assert repeated.json()["quizzes_passed"] == 1
 

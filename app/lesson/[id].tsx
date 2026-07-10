@@ -1,105 +1,113 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { BackButton } from "@/components/BackButton";
 import { FlowerIcon } from "@/components/FlowerIcon";
 import { PrimaryButton } from "@/components/PrimaryButton";
-import { Term } from "@/components/Term";
-import { completeLesson, getLesson } from "@/services/api";
+import { findLesson } from "@/data/lessons";
+import { completeLesson } from "@/services/api";
 import { useGarden } from "@/state/garden";
 import { colors, shadow } from "@/theme/colors";
-import { Lesson } from "@/types/domain";
+
+// Flower, accent and readable label shown per module category.
+const categoryMeta: Record<string, { flower: string; accent: string; label: string }> = {
+  budgeting: { flower: "Daisy", accent: colors.sunflowerYellow, label: "Budgeting" },
+  savings: { flower: "Marigold", accent: colors.softOrange, label: "Savings" },
+  credit_debt: { flower: "Rose", accent: colors.roseRed, label: "Credit & Debt" },
+  retirement: { flower: "Orchid", accent: colors.orchidPurple, label: "Retirement" },
+  funds: { flower: "Purple Tulip", accent: colors.orchidPurple, label: "Investing" }
+};
+
+function prettyHost(url: string): string {
+  return url.replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0];
+}
 
 export default function LessonScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { refreshAccount } = useGarden();
-  const [lesson, setLesson] = useState<Lesson | null>(null);
-  const [loading, setLoading] = useState(true);
+  const lesson = findLesson(id);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!id) return;
-    setLoading(true);
-    getLesson(id)
-      .then(setLesson)
-      .catch((cause) => setError(cause instanceof Error ? cause.message : "Could not load this lesson."))
-      .finally(() => setLoading(false));
-  }, [id]);
+  const [busy, setBusy] = useState(false);
 
   async function handleTakeQuiz() {
-    if (lesson) {
-      try {
-        await completeLesson(lesson.id);
-        await refreshAccount();
-        setError(null);
-      } catch (cause) {
-        setError(cause instanceof Error ? cause.message : "Could not record your lesson progress.");
-        return;
-      }
-      router.push(`/quiz/${lesson.id}`);
+    if (!lesson || busy) return;
+    setBusy(true);
+    try {
+      // Best-effort: record lesson completion on the server. Offline, this is a
+      // no-op and progress is tracked client-side after the quiz instead.
+      await completeLesson(lesson.id);
+      await refreshAccount();
+    } catch {
+      // Never block the learner from taking the quiz if the sync fails.
+    } finally {
+      setBusy(false);
     }
-  }
-
-  if (loading) {
-    return <View style={styles.screen}><Text style={styles.title}>Loading lesson...</Text></View>;
+    router.push(`/quiz/${lesson.id}`);
   }
 
   if (!lesson) {
     return (
-      <View style={styles.screen}>
+      <View style={styles.root}>
         <BackButton />
-        <Text style={styles.title}>Lesson not found</Text>
-        {error ? <Text style={styles.copy}>{error}</Text> : null}
+        <View style={styles.screen}>
+          <Text style={styles.title}>Lesson not found</Text>
+        </View>
       </View>
     );
   }
+
+  const meta = categoryMeta[lesson.category] ?? categoryMeta.budgeting;
 
   return (
     <View style={styles.root}>
       <BackButton />
       <ScrollView contentContainerStyle={styles.screen}>
-      <View style={styles.hero}>
-        <View style={styles.iconWrap}>
-          <FlowerIcon name={lesson.category === "credit_debt" ? "Rose" : "Daisy"} size={64} />
+        <View style={styles.hero}>
+          <View style={[styles.iconWrap, { backgroundColor: `${meta.accent}33` }]}>
+            <FlowerIcon name={meta.flower} size={58} />
+          </View>
+          <View style={styles.kickerRow}>
+            <Text style={styles.kicker}>{meta.label}</Text>
+            <Text style={styles.difficulty}>{lesson.difficulty}</Text>
+          </View>
+          <Text style={styles.title}>{lesson.title}</Text>
+          <Text style={styles.summary}>{lesson.summary}</Text>
         </View>
-        <Text style={styles.kicker}>{lesson.category.replace("_", " ")}</Text>
-        <Text style={styles.title}>{lesson.title}</Text>
-        <Text style={styles.copy}>{lesson.summary}</Text>
-      </View>
 
-      <View style={styles.lessonBox}>
-        <Text style={styles.sectionTitle}>Tiny lesson</Text>
-        <Text style={styles.copy}>Money concepts become easier when you compare the plan with what happened.</Text>
-        <View style={styles.inlineRow}>
-          <Text style={styles.copy}>If your </Text>
-          <Term label="actual spending" definition="The amount you really spent during a period." />
-          <Text style={styles.copy}> is higher than expected, the gap is a signal to review habits.</Text>
-        </View>
-        <View style={styles.inlineRow}>
-          <Text style={styles.copy}>Terms like </Text>
-          <Term label="APR" definition="The yearly cost of borrowing money, shown as a percentage." />
-          <Text style={styles.copy}>, </Text>
-          <Term label="Roth IRA" definition="A retirement account type with specific tax rules." />
-          <Text style={styles.copy}>, </Text>
-          <Term label="401(k)" definition="An employer-sponsored retirement account." />
-          <Text style={styles.copy}>, </Text>
-          <Term label="index fund" definition="A fund designed to track a market index." />
-          <Text style={styles.copy}>, and </Text>
-          <Term label="employer match" definition="Money an employer contributes to your retirement account when you contribute." />
-          <Text style={styles.copy}> can be tapped for help.</Text>
-        </View>
-      </View>
+        {lesson.sourceUrl ? (
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => Linking.openURL(lesson.sourceUrl!)}
+            style={styles.sourceCard}
+          >
+            <View style={styles.sourceIcon}>
+              <Ionicons color={colors.deepGreen} name="book" size={20} />
+            </View>
+            <View style={styles.sourceText}>
+              <Text style={styles.sourceTitle}>Read the full lesson</Text>
+              <Text style={styles.sourceUrl} numberOfLines={1}>{prettyHost(lesson.sourceUrl)}</Text>
+            </View>
+            <Ionicons color={colors.mutedText} name="open-outline" size={20} />
+          </TouchableOpacity>
+        ) : null}
 
-      <View style={styles.rewardCard}>
-        <Ionicons color={colors.sunflowerYellow} name="sparkles" size={22} />
-        <View style={styles.rewardText}>
-          <Text style={styles.rewardTitle}>Pass the knowledge check to grow your garden</Text>
-          <Text style={styles.rewardCopy}>Your FastAPI garden records rewards only after a passed quiz.</Text>
+        <View style={styles.rewardCard}>
+          <Text style={styles.rewardTitle}>Pass the quiz to grow your {meta.flower}</Text>
+          <Text style={styles.rewardCopy}>
+            Complete the knowledge check to bloom a new flower in your garden.
+          </Text>
+          <View style={styles.rewardRow}>
+            <View style={styles.rewardPill}>
+              <FlowerIcon name={meta.flower} size={16} />
+              <Text style={styles.rewardPillText}>+1 {meta.flower}</Text>
+            </View>
+          </View>
         </View>
-      </View>
 
-      <PrimaryButton label="Take Quiz" onPress={handleTakeQuiz} />
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+
+        <PrimaryButton label={busy ? "Loading quiz..." : "Take Quiz"} onPress={handleTakeQuiz} />
       </ScrollView>
     </View>
   );
@@ -112,7 +120,7 @@ const styles = StyleSheet.create({
   },
   screen: {
     backgroundColor: colors.cream,
-    gap: 16,
+    gap: 14,
     padding: 24,
     paddingBottom: 42,
     paddingTop: 72
@@ -127,11 +135,16 @@ const styles = StyleSheet.create({
   },
   iconWrap: {
     alignItems: "center",
-    backgroundColor: "#E8F7F0",
     borderRadius: 24,
     height: 78,
     justifyContent: "center",
+    marginBottom: 2,
     width: 78
+  },
+  kickerRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 10
   },
   kicker: {
     color: colors.deepGreen,
@@ -139,53 +152,98 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     textTransform: "uppercase"
   },
+  difficulty: {
+    backgroundColor: "#E8F7F0",
+    borderRadius: 999,
+    color: colors.deepGreen,
+    fontSize: 11,
+    fontWeight: "900",
+    overflow: "hidden",
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    textTransform: "uppercase"
+  },
   title: {
     color: colors.darkText,
-    fontSize: 33,
+    fontSize: 30,
     fontWeight: "900",
-    letterSpacing: -0.6,
-    lineHeight: 39
+    letterSpacing: -0.5,
+    lineHeight: 36
   },
-  copy: {
+  summary: {
     color: colors.mutedText,
     fontSize: 16,
     lineHeight: 25
   },
-  lessonBox: {
+  sourceCard: {
+    alignItems: "center",
     backgroundColor: colors.card,
-    borderRadius: 28,
+    borderRadius: 22,
+    flexDirection: "row",
     gap: 14,
-    padding: 20,
+    padding: 16,
     ...shadow
   },
-  sectionTitle: {
-    color: colors.darkText,
-    fontSize: 20,
-    fontWeight: "900"
-  },
-  inlineRow: {
-    flexDirection: "row",
-    flexWrap: "wrap"
-  },
-  rewardCard: {
+  sourceIcon: {
     alignItems: "center",
-    backgroundColor: "#FFF4CB",
-    borderRadius: 24,
-    flexDirection: "row",
-    gap: 12,
-    padding: 16
+    backgroundColor: "#E8F7F0",
+    borderRadius: 16,
+    height: 44,
+    justifyContent: "center",
+    width: 44
   },
-  rewardText: {
+  sourceText: {
     flex: 1,
-    gap: 2
+    gap: 3
   },
-  rewardTitle: {
+  sourceTitle: {
     color: colors.darkText,
     fontSize: 16,
     fontWeight: "900"
   },
+  sourceUrl: {
+    color: colors.mutedText,
+    fontSize: 13,
+    fontWeight: "700"
+  },
+  rewardCard: {
+    backgroundColor: "#FFF4CB",
+    borderRadius: 24,
+    gap: 8,
+    padding: 18
+  },
+  rewardTitle: {
+    color: colors.darkText,
+    fontSize: 17,
+    fontWeight: "900"
+  },
   rewardCopy: {
     color: colors.mutedText,
+    fontSize: 14,
+    lineHeight: 20
+  },
+  rewardRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 2
+  },
+  rewardPill: {
+    alignItems: "center",
+    backgroundColor: colors.white,
+    borderRadius: 999,
+    flexDirection: "row",
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 6
+  },
+  rewardPillText: {
+    color: colors.darkText,
+    fontSize: 12,
+    fontWeight: "900"
+  },
+  error: {
+    color: "#B42318",
     fontSize: 14,
     lineHeight: 20
   }

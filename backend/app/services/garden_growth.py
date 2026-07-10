@@ -16,9 +16,10 @@ def apply_reward(plant: Plant, reward: dict[str, int]) -> None:
     plant.water += water
     plant.fertilizer += fertilizer
     gained_growth = sunlight * 10 + water * 10 + fertilizer * 15
-    if plant.growth + gained_growth >= 100:
-        plant.growth = 0
-        plant.quantity += 1
-        plant.stage += 1
-    else:
-        plant.growth += gained_growth
+
+    # Every completed lesson blooms a new flower so the garden visibly grows
+    # with each module the learner finishes. Growth accumulates toward the next
+    # stage but no longer gates whether a flower appears.
+    plant.quantity += 1
+    plant.stage += 1
+    plant.growth = min(100, plant.growth + gained_growth)

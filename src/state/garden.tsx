@@ -31,6 +31,8 @@ type PersistedState = {
   experienceLevel: ExperienceLevel;
   confidenceAssessment: ConfidenceAssessment | null;
   unlockedAchievements: string[];
+  streak: number;
+  lastActiveISO: string | null;
 };
 
 export type ReceiptCommitResult = {
@@ -81,6 +83,15 @@ function cloneDemo(): Plant[] {
   return demoPlants.map((plant) => ({ ...plant }));
 }
 
+function startOfDayMs(d: Date): number {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+}
+
+// Whole calendar days (local time) between a stored ISO date and now.
+function daysBetween(fromISO: string, now: Date): number {
+  return Math.round((startOfDayMs(now) - startOfDayMs(new Date(fromISO))) / 86_400_000);
+}
+
 let localId = 0;
 function nextId() {
   localId += 1;
@@ -89,7 +100,8 @@ function nextId() {
 
 export function GardenProvider({ children }: { children: ReactNode }) {
   const [plants, setPlants] = useState<Plant[]>(cloneDemo);
-  const [streak, setStreak] = useState(7);
+  const [streak, setStreak] = useState(0);
+  const [lastActiveISO, setLastActiveISO] = useState<string | null>(null);
   const [lessonsCompleted, setLessonsCompleted] = useState(0);
   const [quizzesPassed, setQuizzesPassed] = useState(0);
   const [budgetsLogged, setBudgetsLogged] = useState(0);
@@ -110,7 +122,9 @@ export function GardenProvider({ children }: { children: ReactNode }) {
 
   function applyBootstrap(account: Bootstrap) {
     setPlants(account.plants);
-    setStreak(account.profile.streakCount);
+    // The backend does not yet track daily streaks (seeded to 0), so only let a
+    // real server-side streak override the locally tracked one.
+    if (account.profile.streakCount > 0) setStreak(account.profile.streakCount);
     setLessonsCompleted(account.lessonsCompleted);
     setQuizzesPassed(account.quizzesPassed);
   }
@@ -129,6 +143,25 @@ export function GardenProvider({ children }: { children: ReactNode }) {
           if (parsed.experienceLevel) setExperienceLevelState(parsed.experienceLevel);
           if (parsed.confidenceAssessment) setConfidenceAssessment(parsed.confidenceAssessment);
           if (Array.isArray(parsed.unlockedAchievements)) setUnlockedAchievements(parsed.unlockedAchievements);
+
+          // Reconcile the daily streak against today's date: the same day keeps
+          // it, a consecutive day bumps it by one, and a missed day restarts at 1.
+          const savedLast = typeof parsed.lastActiveISO === "string" ? parsed.lastActiveISO : null;
+          const savedStreak = typeof parsed.streak === "number" ? parsed.streak : 0;
+          if (savedLast) {
+            const now = new Date();
+            const diff = daysBetween(savedLast, now);
+            if (diff <= 0) {
+              setStreak(savedStreak);
+              setLastActiveISO(savedLast);
+            } else if (diff === 1) {
+              setStreak(savedStreak + 1);
+              setLastActiveISO(now.toISOString());
+            } else {
+              setStreak(1);
+              setLastActiveISO(now.toISOString());
+            }
+          }
         }
       } catch {
         // Ignore corrupt cache and start from the demo garden.
@@ -227,7 +260,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       setLessonsCompleted((count) => count + 1);
       setQuizzesPassed((count) => count + 1);
     }
-    if (result.profile) setStreak(result.profile.streakCount);
+    if (result.profile && result.profile.streakCount > 0) setStreak(result.profile.streakCount);
     if (typeof result.lessonsCompleted === "number") setLessonsCompleted(result.lessonsCompleted);
     if (typeof result.quizzesPassed === "number") setQuizzesPassed(result.quizzesPassed);
   }, [plants]);
@@ -242,10 +275,12 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       riskProfile,
       experienceLevel,
       confidenceAssessment,
-      unlockedAchievements
+      unlockedAchievements,
+      streak,
+      lastActiveISO
     };
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(state)).catch(() => {});
-  }, [budgetsLogged, investmentsPlanted, receiptsScanned, transactions, riskProfile, experienceLevel, confidenceAssessment, unlockedAchievements]);
+  }, [budgetsLogged, investmentsPlanted, receiptsScanned, transactions, riskProfile, experienceLevel, confidenceAssessment, unlockedAchievements, streak, lastActiveISO]);
 
   const totals = useMemo(
     () =>
@@ -379,7 +414,10 @@ export function GardenProvider({ children }: { children: ReactNode }) {
         unlocked: false
       }))
     );
-    setStreak(0);
+    // Creating the account (finishing onboarding) is the first step: start the
+    // streak at day 1 rather than 0.
+    setStreak(1);
+    setLastActiveISO(new Date().toISOString());
     setLessonsCompleted(0);
     setQuizzesPassed(0);
     setBudgetsLogged(0);
@@ -397,6 +435,8 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     setFlowersGrown(0);
     setInvestmentsPlanted(0);
     setReceiptsScanned(0);
+    setStreak(0);
+    setLastActiveISO(null);
     setTransactions(sampleTransactions);
     setRiskProfileState("Moderate");
     setExperienceLevelState("beginner");

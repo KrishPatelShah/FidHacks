@@ -13,8 +13,6 @@ export const learningModules: LearningModule[] = [
   InvestingModule
 ];
 
-console.log(learningModules)
-
 export function findLesson(id: string | undefined): Lesson | undefined {
   return learningModules
     .flatMap((module) => module.lessons)

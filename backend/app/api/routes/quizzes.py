@@ -66,11 +66,14 @@ def create_quiz_attempt(
     elif progress.completed_at is None:
         progress.completed_at = now
 
+    # Every passed quiz blooms a flower so the garden visibly grows each time the
+    # learner succeeds. The first pass also stamps passed_at, which drives the
+    # distinct "quizzes passed" count.
     updated_plant = None
-    first_pass = passed and progress.passed_at is None
-    earned = lesson.reward if first_pass else {}
-    if first_pass:
-        progress.passed_at = now
+    earned = lesson.reward if passed else {}
+    if passed:
+        if progress.passed_at is None:
+            progress.passed_at = now
         plant = db.scalar(select(Plant).where(Plant.user_id == current_profile.id, Plant.type == lesson.category))
         if plant is None:
             raise HTTPException(status_code=409, detail="No garden plant is configured for this lesson category")

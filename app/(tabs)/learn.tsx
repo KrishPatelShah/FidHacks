@@ -1,53 +1,47 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
-import { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { FlowerIcon } from "@/components/FlowerIcon";
+import { learningModules } from "@/data/lessons";
 import { difficultyUnlocked } from "@/lib/levels";
-import { getLearningModules } from "@/services/api";
 import { useGarden } from "@/state/garden";
 import { colors, shadow } from "@/theme/colors";
-import { ExperienceLevel, LearningModule } from "@/types/domain";
+import { ExperienceLevel } from "@/types/domain";
 
+// Presentation details keyed by module category. These mirror the modules
+// defined in src/data/Modules so the cards match the real lesson content.
 const moduleDetails: Record<string, { topics: string; reward: string; difficulty: string; flower: string; accent: string }> = {
   budgeting: {
-    topics: "Budgeting, expected vs. actual spending, spending habits",
-    reward: "Unlock 1 Daisy",
+    topics: "Expected vs. actual spending, needs vs. wants, tracking expenses, and building your first budget",
+    reward: "Grow your Daisy",
     difficulty: "Beginner",
     flower: "Daisy",
     accent: colors.sunflowerYellow
   },
   savings: {
-    topics: "Saving money, emergency funds, savings goals",
-    reward: "Earn water",
+    topics: "Emergency funds, savings goals, automating savings, and choosing the right account",
+    reward: "Grow your Marigold",
     difficulty: "Beginner",
     flower: "Marigold",
     accent: colors.softOrange
   },
   credit_debt: {
-    topics: "Credit cards, credit scores, APR, interest, debt repayment",
+    topics: "Credit scores, credit reports, APR, and strategies to pay off debt",
     reward: "Grow your Rose",
     difficulty: "Beginner",
     flower: "Rose",
     accent: colors.roseRed
   },
   retirement: {
-    topics: "Roth IRA, 401(k), employer match, long-term saving",
-    reward: "Earn sunlight",
+    topics: "401(k)s, IRAs, employer match, Roth vs. Traditional, and compound growth",
+    reward: "Grow your Orchid",
     difficulty: "Intermediate",
     flower: "Orchid",
     accent: colors.orchidPurple
   },
-  career_taxes: {
-    topics: "Paychecks, taxes, benefits, take-home pay",
-    reward: "Unlock Blue Iris",
-    difficulty: "Intermediate",
-    flower: "Blue Iris",
-    accent: colors.skyBlue
-  },
   funds: {
-    topics: "Savings accounts, bonds, index funds, mutual funds, stocks",
-    reward: "Unlock investment flowers",
+    topics: "Risk vs. return, diversification, index funds, ETFs, and building a portfolio",
+    reward: "Grow your investment flowers",
     difficulty: "Advanced",
     flower: "Purple Tulip",
     accent: colors.orchidPurple
@@ -56,38 +50,21 @@ const moduleDetails: Record<string, { topics: string; reward: string; difficulty
 
 export default function LearningPathScreen() {
   const { experienceLevel } = useGarden();
-  const [modules, setModules] = useState<LearningModule[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    getLearningModules()
-      .then(setModules)
-      .catch((cause) => setError(cause instanceof Error ? cause.message : "Could not load lessons."))
-      .finally(() => setLoading(false));
-  }, []);
+  const modules = learningModules;
 
   return (
     <ScrollView contentContainerStyle={styles.screen}>
       <View style={styles.header}>
         <Text style={styles.title}>Grow Your Money Knowledge</Text>
-        <Text style={styles.subtitle}>Complete lessons to unlock new flowers.</Text>
+        <Text style={styles.subtitle}>Pick a module to see its lessons and grow new flowers.</Text>
       </View>
-
-      {loading ? <Text style={styles.status}>Loading learning path...</Text> : null}
-      {error ? <Text style={styles.error}>{error}</Text> : null}
 
       {modules.map((module) => {
         const detail = moduleDetails[module.category] ?? moduleDetails.budgeting;
-        const firstLesson = module.lessons[0];
         const difficulty = detail.difficulty.toLowerCase() as ExperienceLevel;
         const unlocked = difficultyUnlocked(experienceLevel, difficulty);
-        // Every module starts fresh: no lessons completed until the learner
-        // actually finishes one.
         const totalLessons = module.lessons.length;
-        const completedLessons = 0;
-        const progress = totalLessons ? completedLessons / totalLessons : 0;
-        const completedLabel = `${completedLessons} of ${totalLessons} ${totalLessons === 1 ? "lesson" : "lessons"}`;
+        const lessonLabel = `${totalLessons} ${totalLessons === 1 ? "lesson" : "lessons"}`;
 
         const body = (
           <>
@@ -106,15 +83,10 @@ export default function LearningPathScreen() {
               </View>
               <Text style={styles.topics}>{detail.topics}</Text>
               {unlocked ? (
-                <>
-                  <View style={styles.progressTrack}>
-                    <View style={[styles.progressFill, { width: `${progress * 100}%`, backgroundColor: detail.accent }]} />
-                  </View>
-                  <View style={styles.metaRow}>
-                    <Text style={styles.meta}>{completedLabel}</Text>
-                    <Text style={styles.reward}>{detail.reward}</Text>
-                  </View>
-                </>
+                <View style={styles.metaRow}>
+                  <Text style={styles.meta}>{lessonLabel}</Text>
+                  <Text style={styles.reward}>{detail.reward}</Text>
+                </View>
               ) : (
                 <View style={styles.lockedRow}>
                   <Ionicons color={colors.mutedText} name="lock-closed" size={13} />
@@ -122,6 +94,7 @@ export default function LearningPathScreen() {
                 </View>
               )}
             </View>
+            {unlocked ? <Ionicons color={colors.mutedText} name="chevron-forward" size={20} /> : null}
           </>
         );
 
@@ -133,10 +106,10 @@ export default function LearningPathScreen() {
           );
         }
 
-        if (!firstLesson) return null;
+        if (totalLessons === 0) return null;
 
         return (
-          <Link key={module.id} href={`/lesson/${firstLesson.id}`} asChild>
+          <Link key={module.id} href={`/module/${module.id}`} asChild>
             <TouchableOpacity style={styles.module}>{body}</TouchableOpacity>
           </Link>
         );
@@ -169,16 +142,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 23
   },
-  status: {
-    color: colors.mutedText,
-    fontSize: 15
-  },
-  error: {
-    color: "#B42318",
-    fontSize: 14,
-    lineHeight: 20
-  },
   module: {
+    alignItems: "center",
     backgroundColor: colors.card,
     borderRadius: 28,
     flexDirection: "row",
@@ -247,16 +212,6 @@ const styles = StyleSheet.create({
     color: colors.mutedText,
     fontSize: 13,
     lineHeight: 19
-  },
-  progressTrack: {
-    backgroundColor: "#EADCC0",
-    borderRadius: 999,
-    height: 9,
-    overflow: "hidden"
-  },
-  progressFill: {
-    borderRadius: 999,
-    height: "100%"
   },
   metaRow: {
     flexDirection: "row",

@@ -1,6 +1,6 @@
-# Financial Garden
+# Flourish
 
-Financial Garden is a gamified financial literacy app that helps users build better money habits by growing a virtual garden. Instead of making finance feel intimidating, the app turns learning, budgeting, quizzes, and reflection into visible progress.
+Flourish is a gamified financial literacy app that helps users build better money habits by growing a virtual garden. Instead of making finance feel intimidating, the app turns learning, budgeting, quizzes, and reflection into visible progress.
 
 The garden rewards consistency and learning, not wealth.
 
@@ -40,7 +40,7 @@ EXPO_PUBLIC_API_URL=http://localhost:8000/api
 
 The app signs in as a demo user automatically, hydrates the garden from Postgres, and routes the Sunflower chat and receipt scanning through the backend. If the backend is offline, the app falls back to local demo data so it always runs.
 
-Gemini is never called directly from the mobile app. The Gemini key lives only on the backend — set `GEMINI_API_KEY` in `backend/.env` to enable real receipt OCR (`POST /api/receipts/scan`); otherwise a built-in demo receipt is returned.
+Gemini is never called directly from the mobile app. The Gemini key lives only on the backend. Set `GEMINI_API_KEY` in `backend/.env` to enable real receipt OCR (`POST /api/receipts/scan`); otherwise a built-in demo receipt is returned.
 
 ## App Concept
 
@@ -765,7 +765,7 @@ This demo shows the app's value: learning, budgeting, AI help, and visual growth
 
 ## Why This Works
 
-Financial Garden combines proven engagement patterns:
+Flourish combines proven engagement patterns:
 
 - Duolingo-style streaks for consistency.
 - Garden growth for visual progress.
@@ -778,6 +778,6 @@ The key difference is that the app does not teach finance through static lessons
 
 ## Main Value Proposition
 
-Financial Garden makes personal finance less intimidating by turning learning and budgeting into a game-like experience. Users grow a virtual garden by completing lessons, building streaks, passing quizzes, tracking budgets, and reflecting on financial decisions.
+Flourish makes personal finance less intimidating by turning learning and budgeting into a game-like experience. Users grow a virtual garden by completing lessons, building streaks, passing quizzes, tracking budgets, and reflecting on financial decisions.
 
 The app rewards consistency and learning, not wealth. This makes it accessible, encouraging, and useful for beginners.

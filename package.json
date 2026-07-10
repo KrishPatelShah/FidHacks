@@ -1,5 +1,5 @@
 {
-  "name": "financial-garden",
+  "name": "flourish",
   "version": "0.1.0",
   "private": true,
   "main": "expo-router/entry",
@@ -38,7 +38,7 @@
     "expo-font": "~12.0.10",
     "@expo/vector-icons": "14.0.4"
   },
-  "description": "Financial Garden is a gamified financial literacy app that helps users build better money habits by growing a virtual garden. Instead of making finance feel intimidating, the app turns learning, budgeting, quizzes, and reflection into visible progress.",
+  "description": "Flourish is a gamified financial literacy app that helps users build better money habits by growing a virtual garden. Instead of making finance feel intimidating, the app turns learning, budgeting, quizzes, and reflection into visible progress.",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/KrishPatelShah/FidHacks.git"

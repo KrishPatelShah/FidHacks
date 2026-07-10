@@ -28,7 +28,7 @@ export default function StocksScreen() {
     setPlanted((current) => ({ ...current, [etf.symbol]: true }));
   }
 
-  // Beginners haven't unlocked investing yet — show a locked gate instead.
+  // Beginners haven't unlocked investing yet, so show a locked gate instead.
   if (!investingUnlocked(experienceLevel)) {
     return (
       <ScrollView contentContainerStyle={styles.screen}>
@@ -43,7 +43,7 @@ export default function StocksScreen() {
           <Text style={styles.lockTitle}>Locked at the Beginner level</Text>
           <Text style={styles.lockCopy}>
             Master budgeting and building your savings first. Reach the Intermediate level to unlock low-risk investing
-            like bonds — then mutual funds and stocks at Advanced.
+            like bonds, then mutual funds and stocks at Advanced.
           </Text>
           <Link href="/(tabs)/learn" asChild>
             <TouchableOpacity style={styles.lockButton}>
@@ -170,7 +170,7 @@ export default function StocksScreen() {
           </View>
           <View style={styles.lockedEtfText}>
             <Text style={styles.lockedEtfSymbol}>{etf.symbol} · {etf.name}</Text>
-            <Text style={styles.lockedEtfNote}>{etf.riskLabel} — unlocks at the Advanced level.</Text>
+            <Text style={styles.lockedEtfNote}>{etf.riskLabel}, unlocks at the Advanced level.</Text>
           </View>
         </View>
       ))}

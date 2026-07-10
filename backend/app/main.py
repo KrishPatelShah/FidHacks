@@ -9,7 +9,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.app_name,
         version="0.1.0",
-        description="Backend API for Financial Garden.",
+        description="Backend API for Flourish.",
     )
 
     app.add_middleware(

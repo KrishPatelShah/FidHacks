@@ -34,7 +34,7 @@ function coerce(raw: unknown): ParsedReceipt | null {
 
 /**
  * Send a receipt image to the FastAPI backend (which calls Gemini server-side)
- * and return parsed transaction data. Always resolves — if the backend is
+ * and return parsed transaction data. Always resolves: if the backend is
  * unreachable or returns nothing usable, it falls back to the mock receipt so
  * the live demo keeps working.
  */

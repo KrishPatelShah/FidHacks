@@ -58,7 +58,7 @@ export default function QuestionnaireScreen() {
   }
 
   function handleStartGrowing() {
-    // Every user begins with an empty clearing — no flowers until they earn them.
+    // Every user begins with an empty clearing, no flowers until they earn them.
     startFreshGarden();
     router.replace("/(tabs)/garden");
   }

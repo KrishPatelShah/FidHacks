@@ -81,10 +81,10 @@ export default function BudgetScreen() {
       const actual = groups.totals[group] / groups.income;
       const diff = actual - targets[group];
       if (group !== "save" && diff > 0.05) {
-        return `${spendCategoryLabels[group]} are a bit high — ${Math.round(actual * 100)}% of income vs a ${Math.round(targets[group] * 100)}% goal.`;
+        return `${spendCategoryLabels[group]} are a bit high, ${Math.round(actual * 100)}% of income vs a ${Math.round(targets[group] * 100)}% goal.`;
       }
       if (group === "save" && diff < -0.05) {
-        return `Savings are a little low — ${Math.round(actual * 100)}% of income vs a ${Math.round(targets.save * 100)}% goal. A small transfer helps.`;
+        return `Savings are a little low, ${Math.round(actual * 100)}% of income vs a ${Math.round(targets.save * 100)}% goal. A small transfer helps.`;
       }
     }
     return "Nice balance! Your Needs, Wants, and Save split is close to the 50/30/20 guide.";
@@ -149,7 +149,7 @@ export default function BudgetScreen() {
     setReviewOpen(false);
     setParsed(null);
     setPickedImage(null);
-    setSavedNote(`First Receipt Sprout! Added ${result.added} items from ${receipt.merchant} — a new ${result.flowerName} grew in your garden.`);
+    setSavedNote(`First Receipt Sprout! Added ${result.added} items from ${receipt.merchant}, a new ${result.flowerName} grew in your garden.`);
   }
 
   function handleManualSave() {

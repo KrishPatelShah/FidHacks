@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Financial Garden",
-    "slug": "financial-garden",
-    "scheme": "financialgarden",
+    "name": "Flourish",
+    "slug": "flourish",
+    "scheme": "flourish",
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
@@ -15,8 +15,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Financial Garden uses your photos to scan receipts for the budget demo.",
-          "cameraPermission": "Financial Garden uses your camera to scan receipts for the budget demo."
+          "photosPermission": "Flourish uses your photos to scan receipts for the budget demo.",
+          "cameraPermission": "Flourish uses your camera to scan receipts for the budget demo."
         }
       ]
     ],

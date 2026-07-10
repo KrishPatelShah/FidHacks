@@ -1,1 +1,1 @@
-"""Financial Garden backend package."""
+"""Flourish backend package."""

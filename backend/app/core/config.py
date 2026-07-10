@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    app_name: str = "Financial Garden API"
+    app_name: str = "Flourish API"
     app_env: str = "development"
     database_url: str = "postgresql+psycopg://financial_garden:financial_garden@db:5432/financial_garden"
     backend_cors_origins: str = "http://localhost:19006,http://localhost:8081,http://localhost:3000"

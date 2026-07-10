@@ -35,11 +35,11 @@ const petalColors: Record<string, string> = {
 // Flowers that read best as a tulip cup rather than a round daisy.
 const tulipFlowers = new Set(["Purple Tulip", "Orchid", "Red Poppy"]);
 
-const MAX_FLOWERS = 12;
+const MAX_FLOWERS = 14;
 
 type Slot = { x: number; y: number; scale: number };
 
-// Lay flowers out to fill the current soil bed. Flowers keep a constant size —
+// Lay flowers out to fill the current soil bed. Flowers keep a constant size,
 // it's the garden (soil + green) that grows with the flower count, so early
 // gardens are small and clustered while mature ones spread across a wide bed.
 function buildSlots(count: number, cx: number, soilCy: number, soilRx: number, soilRy: number): Slot[] {
@@ -212,12 +212,12 @@ export function GardenPreview({ plants }: { plants: Plant[] }) {
           <Ellipse cx={280} cy={56} rx={14} ry={10} fill="#FFFFFF" />
         </G>
 
-        {/* Garden bed — a floating green oval that grows with the garden */}
+        {/* Garden bed: a floating green oval that grows with the garden */}
         <Ellipse cx={cx} cy={greenCy} rx={greenRx + 8} ry={greenRy + 4} fill="#5DCAA5" opacity={0.35} />
         <Ellipse cx={cx} cy={greenCy} rx={greenRx} ry={greenRy} fill="#8AD7A9" />
         <Ellipse cx={cx} cy={greenCy - 4} rx={greenRx * 0.84} ry={greenRy * 0.82} fill="#74C98F" />
 
-        {/* Tilled soil bed — centered within the green oval */}
+        {/* Tilled soil bed: centered within the green oval */}
         <Ellipse cx={cx} cy={soilCy} rx={soilRx} ry={soilRy} fill="url(#soil)" />
         <Ellipse cx={cx} cy={soilCy - 3} rx={soilRx * 0.9} ry={soilRy * 0.8} fill="#A56B3C" opacity={0.55} />
         {[-0.58, -0.2, 0.2, 0.58].map((f, i) => {
@@ -254,18 +254,20 @@ export function GardenPreview({ plants }: { plants: Plant[] }) {
           slots.map((pos, index) => {
             const plant = shown[index].plant;
             const color = petalColors[plant.flowerName] ?? "#FFFFFF";
+            // Position + scale live on a static outer <G> (string transforms
+            // render reliably), while only the sway rotation lives on the
+            // animated inner <G>. Combining a static translate/scale with an
+            // animated rotation on a single node drops the translate and
+            // collapses every flower into the top-left corner.
             return (
-              <AnimatedG
+              <G
                 key={`${plant.id}_${shown[index].index}_${index}`}
-                x={pos.x}
-                y={pos.y}
-                scale={pos.scale}
-                originX={0}
-                originY={0}
-                rotation={index % 2 === 0 ? swayA : swayB}
+                transform={`translate(${pos.x} ${pos.y}) scale(${pos.scale})`}
               >
-                <Flower color={color} tulip={tulipFlowers.has(plant.flowerName)} />
-              </AnimatedG>
+                <AnimatedG originX={0} originY={0} rotation={index % 2 === 0 ? swayA : swayB}>
+                  <Flower color={color} tulip={tulipFlowers.has(plant.flowerName)} />
+                </AnimatedG>
+              </G>
             );
           })
         )}
@@ -285,7 +287,7 @@ export function GardenPreview({ plants }: { plants: Plant[] }) {
           <>
             <Text style={styles.caption}>Your garden grows through lessons, reflection, and consistency.</Text>
             <Text style={styles.meta}>
-              {flowers.length} flowers visible · {unlockedCount} categories unlocked
+              {flowers.length} {flowers.length === 1 ? "flower" : "flowers"} grown · {unlockedCount} categories unlocked
             </Text>
           </>
         )}

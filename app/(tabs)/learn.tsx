@@ -9,11 +9,9 @@ import { useGarden } from "@/state/garden";
 import { colors, shadow } from "@/theme/colors";
 import { ExperienceLevel, LearningModule } from "@/types/domain";
 
-const moduleDetails: Record<string, { topics: string; progress: number; completed: string; reward: string; difficulty: string; flower: string; accent: string }> = {
+const moduleDetails: Record<string, { topics: string; reward: string; difficulty: string; flower: string; accent: string }> = {
   budgeting: {
     topics: "Budgeting, expected vs. actual spending, spending habits",
-    progress: 0.6,
-    completed: "3 of 5 lessons",
     reward: "Unlock 1 Daisy",
     difficulty: "Beginner",
     flower: "Daisy",
@@ -21,8 +19,6 @@ const moduleDetails: Record<string, { topics: string; progress: number; complete
   },
   savings: {
     topics: "Saving money, emergency funds, savings goals",
-    progress: 0.25,
-    completed: "1 of 4 lessons",
     reward: "Earn water",
     difficulty: "Beginner",
     flower: "Marigold",
@@ -30,8 +26,6 @@ const moduleDetails: Record<string, { topics: string; progress: number; complete
   },
   credit_debt: {
     topics: "Credit cards, credit scores, APR, interest, debt repayment",
-    progress: 0.4,
-    completed: "2 of 5 lessons",
     reward: "Grow your Rose",
     difficulty: "Beginner",
     flower: "Rose",
@@ -39,8 +33,6 @@ const moduleDetails: Record<string, { topics: string; progress: number; complete
   },
   retirement: {
     topics: "Roth IRA, 401(k), employer match, long-term saving",
-    progress: 0.15,
-    completed: "1 of 5 lessons",
     reward: "Earn sunlight",
     difficulty: "Intermediate",
     flower: "Orchid",
@@ -48,8 +40,6 @@ const moduleDetails: Record<string, { topics: string; progress: number; complete
   },
   career_taxes: {
     topics: "Paychecks, taxes, benefits, take-home pay",
-    progress: 0.2,
-    completed: "1 of 5 lessons",
     reward: "Unlock Blue Iris",
     difficulty: "Intermediate",
     flower: "Blue Iris",
@@ -57,8 +47,6 @@ const moduleDetails: Record<string, { topics: string; progress: number; complete
   },
   funds: {
     topics: "Savings accounts, bonds, index funds, mutual funds, stocks",
-    progress: 0.1,
-    completed: "1 of 6 lessons",
     reward: "Unlock investment flowers",
     difficulty: "Advanced",
     flower: "Purple Tulip",
@@ -94,6 +82,12 @@ export default function LearningPathScreen() {
         const firstLesson = module.lessons[0];
         const difficulty = detail.difficulty.toLowerCase() as ExperienceLevel;
         const unlocked = difficultyUnlocked(experienceLevel, difficulty);
+        // Every module starts fresh: no lessons completed until the learner
+        // actually finishes one.
+        const totalLessons = module.lessons.length;
+        const completedLessons = 0;
+        const progress = totalLessons ? completedLessons / totalLessons : 0;
+        const completedLabel = `${completedLessons} of ${totalLessons} ${totalLessons === 1 ? "lesson" : "lessons"}`;
 
         const body = (
           <>
@@ -107,17 +101,17 @@ export default function LearningPathScreen() {
             </View>
             <View style={styles.moduleBody}>
               <View style={styles.moduleHeader}>
-                <Text style={styles.moduleTitle}>{module.flowerName} — {module.title}</Text>
+                <Text style={styles.moduleTitle}>{module.flowerName}: {module.title}</Text>
                 <Text style={[styles.badge, { color: detail.accent }]}>{detail.difficulty}</Text>
               </View>
               <Text style={styles.topics}>{detail.topics}</Text>
               {unlocked ? (
                 <>
                   <View style={styles.progressTrack}>
-                    <View style={[styles.progressFill, { width: `${detail.progress * 100}%`, backgroundColor: detail.accent }]} />
+                    <View style={[styles.progressFill, { width: `${progress * 100}%`, backgroundColor: detail.accent }]} />
                   </View>
                   <View style={styles.metaRow}>
-                    <Text style={styles.meta}>{detail.completed}</Text>
+                    <Text style={styles.meta}>{completedLabel}</Text>
                     <Text style={styles.reward}>{detail.reward}</Text>
                   </View>
                 </>

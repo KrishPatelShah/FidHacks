@@ -9,7 +9,7 @@ export default function WelcomeScreen() {
     <View style={styles.screen}>
       <View style={styles.hero}>
         <SunflowerCompanion size={124} />
-        <Text style={styles.name}>Financial Garden</Text>
+        <Text style={styles.name}>Flourish</Text>
         <Text style={styles.tagline}>Grow your money knowledge one habit at a time.</Text>
       </View>
       <View style={styles.actions}>

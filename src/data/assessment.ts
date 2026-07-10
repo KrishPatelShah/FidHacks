@@ -39,7 +39,7 @@ export const levelCopy: Record<
     emoji: "🌱",
     title: "Beginner",
     description:
-      "You're just getting started — and that's a great place to be. We'll begin with budgeting basics, simple money habits, and friendly explanations so your garden can grow at a comfortable pace."
+      "You're just getting started, and that's a great place to be. We'll begin with budgeting basics, simple money habits, and friendly explanations so your garden can grow at a comfortable pace."
   },
   Intermediate: {
     emoji: "🌿",

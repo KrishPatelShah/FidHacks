@@ -1,37 +1,60 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useMemo, useState } from "react";
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { FlowerIcon } from "@/components/FlowerIcon";
 import { GardenPreview } from "@/components/GardenPreview";
 import { achievementDefs } from "@/data/achievements";
-import { demoCommunityPosts, demoDirectory, demoFriendGardens, demoLeaderboard, suggestedMessages } from "@/data/community";
-import { demoPlants } from "@/data/plants";
+import { demoCommunityPosts, discoverPeople, friendFlowerCount, friendFlowerTypes, friendPlants, friends } from "@/data/community";
 import { useGarden } from "@/state/garden";
 import { colors, shadow } from "@/theme/colors";
 
 type Tab = "leaderboard" | "gardens" | "directory" | "posts";
 
 const tabs: Tab[] = ["leaderboard", "gardens", "directory", "posts"];
-const tabLabels: Record<Tab, string> = { leaderboard: "Leaders", gardens: "Gardens", directory: "Directory", posts: "Posts" };
+const tabLabels: Record<Tab, string> = { leaderboard: "Leaders", gardens: "Gardens", directory: "Find", posts: "Posts" };
 const rankColors = ["#F4B740", "#B9C4CC", "#C98A5E"];
+
+// Mocked phone contacts for the "invite via contacts" demo flow.
+const phoneContacts = [
+  { id: "contact_1", name: "Taylor Brooks", detail: "In your contacts" },
+  { id: "contact_2", name: "Jamie Nguyen", detail: "In your contacts" },
+  { id: "contact_3", name: "Morgan Lee", detail: "In your contacts" }
+];
 
 export default function CommunityScreen() {
   const { unlockedAchievements, totalFlowers, streak } = useGarden();
   const [tab, setTab] = useState<Tab>("leaderboard");
-  const [messageTo, setMessageTo] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [requested, setRequested] = useState<string[]>([]);
+  const [contactsOpen, setContactsOpen] = useState(false);
 
   const myPills = achievementDefs.filter((a) => unlockedAchievements.includes(a.id)).slice(0, 4);
 
-  // Replace the placeholder "you" row with the player's real garden stats, then
-  // re-rank so their position reflects their actual flower count.
+  // Build the leaderboard from the shared friend data plus the player's real
+  // garden stats, then re-rank so positions reflect actual flower counts.
   const myTopBadge = [...achievementDefs].reverse().find((a) => unlockedAchievements.includes(a.id))?.title ?? "Just Started";
-  const leaderboard = demoLeaderboard
-    .map((row) =>
-      row.userId === "you"
-        ? { ...row, plantsThisWeek: totalFlowers, streakLevel: `${streak} day streak`, topBadge: myTopBadge }
-        : row
-    )
-    .sort((a, b) => b.plantsThisWeek - a.plantsThisWeek);
+  const leaderboard = useMemo(() => {
+    const friendRows = friends.map((friend) => ({
+      userId: friend.userId,
+      displayName: friend.displayName,
+      flowers: friendFlowerCount(friend),
+      streakLevel: `${friend.streakDays} day streak`,
+      topBadge: friend.topBadge
+    }));
+    const youRow = { userId: "you", displayName: "You", flowers: totalFlowers, streakLevel: `${streak} day streak`, topBadge: myTopBadge };
+    return [...friendRows, youRow].sort((a, b) => b.flowers - a.flowers);
+  }, [totalFlowers, streak, myTopBadge]);
+
+  const results = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return discoverPeople;
+    return discoverPeople.filter(
+      (person) => person.displayName.toLowerCase().includes(q) || person.username.toLowerCase().includes(q)
+    );
+  }, [query]);
+
+  const toggleRequest = (userId: string) =>
+    setRequested((current) => (current.includes(userId) ? current.filter((id) => id !== userId) : [...current, userId]));
 
   return (
     <ScrollView contentContainerStyle={styles.screen}>
@@ -78,24 +101,26 @@ export default function CommunityScreen() {
                 </View>
                 <View style={styles.plantsCount}>
                   <Ionicons color={colors.deepGreen} name="flower" size={15} />
-                  <Text style={styles.plantsCountText}>{row.plantsThisWeek}</Text>
+                  <Text style={styles.plantsCountText}>{row.flowers}</Text>
                 </View>
               </View>
             );
           })}
-          <Text style={styles.footNote}>Ranked by flowers grown this week — never by money.</Text>
+          <Text style={styles.footNote}>Ranked by flowers grown, never by money.</Text>
         </View>
       ) : null}
 
       {tab === "gardens" ? (
         <View style={styles.stack}>
-          {demoFriendGardens.map((garden, index) => (
-            <View key={garden.userId} style={styles.card}>
-              <Text style={styles.cardTitle}>{garden.displayName}'s Garden</Text>
-              <Text style={styles.copy}>{garden.flowerTypesUnlocked} flower types · {garden.milestonesCompleted} milestones · {garden.streakLevel}</Text>
-              <GardenPreview plants={demoPlants.slice(0, index === 0 ? 5 : 3)} />
+          {friends.map((friend) => (
+            <View key={friend.userId} style={styles.card}>
+              <Text style={styles.cardTitle}>{friend.displayName}'s Garden</Text>
+              <Text style={styles.copy}>
+                {friendFlowerCount(friend)} flowers · {friendFlowerTypes(friend)} flower types · {friend.streakDays} day streak
+              </Text>
+              <GardenPreview plants={friendPlants(friend)} />
               <View style={styles.badgeRow}>
-                <Text style={styles.badge}>Budget Builder</Text>
+                <Text style={styles.badge}>{friend.topBadge}</Text>
                 <Text style={styles.badge}>Quiz Sprout</Text>
                 <Text style={styles.badge}>Weekly Challenge</Text>
               </View>
@@ -107,23 +132,59 @@ export default function CommunityScreen() {
       {tab === "directory" ? (
         <View style={styles.stack}>
           <Text style={styles.sectionTitle}>Find garden buddies</Text>
-          {demoDirectory.map((person) => (
-            <View key={person.userId} style={styles.directoryCard}>
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{person.displayName.slice(0, 1)}</Text>
-              </View>
-              <View style={styles.directoryBody}>
-                <Text style={styles.directoryName}>{person.displayName}</Text>
-                <Text style={styles.goalTag}>{person.goal}</Text>
-                <Text style={styles.copy}>{person.blurb}</Text>
-                <Text style={styles.directoryMeta}>{person.flowerTypes} flower types · {person.streakLevel}</Text>
-              </View>
-              <TouchableOpacity onPress={() => setMessageTo(person.displayName)} style={styles.messageButton}>
-                <Ionicons color={colors.white} name="chatbubble-ellipses" size={16} />
-                <Text style={styles.messageButtonText}>Message</Text>
-              </TouchableOpacity>
-            </View>
-          ))}
+          <View style={styles.searchBar}>
+            <Ionicons color={colors.mutedText} name="search" size={18} />
+            <TextInput
+              autoCapitalize="none"
+              autoCorrect={false}
+              onChangeText={setQuery}
+              placeholder="Search by username"
+              placeholderTextColor={colors.mutedText}
+              style={styles.searchInput}
+              value={query}
+            />
+            {query ? (
+              <Pressable onPress={() => setQuery("")}>
+                <Ionicons color={colors.mutedText} name="close-circle" size={18} />
+              </Pressable>
+            ) : null}
+          </View>
+
+          <TouchableOpacity onPress={() => setContactsOpen(true)} style={styles.contactsButton}>
+            <Ionicons color={colors.deepGreen} name="people" size={18} />
+            <Text style={styles.contactsButtonText}>Invite from contacts</Text>
+            <Ionicons color={colors.mutedText} name="chevron-forward" size={18} />
+          </TouchableOpacity>
+
+          {results.length ? (
+            results.map((person) => {
+              const isRequested = requested.includes(person.userId);
+              return (
+                <View key={person.userId} style={styles.directoryCard}>
+                  <View style={styles.avatar}>
+                    <Text style={styles.avatarText}>{person.displayName.slice(0, 1)}</Text>
+                  </View>
+                  <View style={styles.directoryBody}>
+                    <Text style={styles.directoryName}>{person.displayName}</Text>
+                    <Text style={styles.username}>@{person.username}</Text>
+                    <Text style={styles.directoryMeta}>
+                      {person.goal}
+                      {person.mutualFriends > 0 ? ` · ${person.mutualFriends} mutual` : ""}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => toggleRequest(person.userId)}
+                    style={[styles.addButton, isRequested && styles.addButtonDone]}
+                  >
+                    <Ionicons color={isRequested ? colors.deepGreen : colors.white} name={isRequested ? "checkmark" : "person-add"} size={16} />
+                    <Text style={[styles.addButtonText, isRequested && styles.addButtonTextDone]}>{isRequested ? "Requested" : "Add"}</Text>
+                  </TouchableOpacity>
+                </View>
+              );
+            })
+          ) : (
+            <Text style={styles.emptyText}>No one matches “{query}”. Try another username.</Text>
+          )}
         </View>
       ) : null}
 
@@ -144,22 +205,37 @@ export default function CommunityScreen() {
         </View>
       ) : null}
 
-      <Modal transparent animationType="slide" visible={Boolean(messageTo)} onRequestClose={() => setMessageTo(null)}>
+      <Modal transparent animationType="slide" visible={contactsOpen} onRequestClose={() => setContactsOpen(false)}>
         <View style={styles.msgBackdrop}>
           <View style={styles.msgCard}>
             <View style={styles.msgHeader}>
-              <Text style={styles.msgTitle}>Message {messageTo}</Text>
-              <Pressable onPress={() => setMessageTo(null)}>
+              <Text style={styles.msgTitle}>Invite from contacts</Text>
+              <Pressable onPress={() => setContactsOpen(false)}>
                 <Ionicons color={colors.darkText} name="close" size={22} />
               </Pressable>
             </View>
-            <Text style={styles.msgSub}>Pick a starter (mocked for the demo):</Text>
-            {suggestedMessages.map((msg) => (
-              <TouchableOpacity key={msg} onPress={() => setMessageTo(null)} style={styles.msgPrompt}>
-                <Ionicons color={colors.deepGreen} name="send" size={15} />
-                <Text style={styles.msgPromptText}>{msg}</Text>
-              </TouchableOpacity>
-            ))}
+            <Text style={styles.msgSub}>Contacts syncing is mocked for the demo.</Text>
+            {phoneContacts.map((contact) => {
+              const isRequested = requested.includes(contact.id);
+              return (
+                <View key={contact.id} style={styles.msgPrompt}>
+                  <View style={styles.avatarSmall}>
+                    <Text style={styles.avatarText}>{contact.name.slice(0, 1)}</Text>
+                  </View>
+                  <View style={styles.contactBody}>
+                    <Text style={styles.directoryName}>{contact.name}</Text>
+                    <Text style={styles.username}>{contact.detail}</Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => toggleRequest(contact.id)}
+                    style={[styles.addButton, isRequested && styles.addButtonDone]}
+                  >
+                    <Ionicons color={isRequested ? colors.deepGreen : colors.white} name={isRequested ? "checkmark" : "person-add"} size={16} />
+                    <Text style={[styles.addButtonText, isRequested && styles.addButtonTextDone]}>{isRequested ? "Invited" : "Invite"}</Text>
+                  </TouchableOpacity>
+                </View>
+              );
+            })}
           </View>
         </View>
       </Modal>
@@ -357,16 +433,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "900"
   },
-  goalTag: {
-    alignSelf: "flex-start",
-    backgroundColor: "#FFF4CB",
-    borderRadius: 999,
-    color: colors.softOrange,
-    fontSize: 11,
-    fontWeight: "900",
-    overflow: "hidden",
-    paddingHorizontal: 8,
-    paddingVertical: 3
+  username: {
+    color: colors.mutedText,
+    fontSize: 13,
+    fontWeight: "700"
   },
   directoryMeta: {
     color: colors.deepGreen,
@@ -374,19 +444,80 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     marginTop: 2
   },
-  messageButton: {
+  searchBar: {
+    alignItems: "center",
+    backgroundColor: colors.card,
+    borderColor: colors.line,
+    borderRadius: 16,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    ...shadow
+  },
+  searchInput: {
+    color: colors.darkText,
+    flex: 1,
+    fontSize: 15,
+    fontWeight: "700",
+    padding: 0
+  },
+  contactsButton: {
+    alignItems: "center",
+    backgroundColor: "#E8F7F0",
+    borderRadius: 16,
+    flexDirection: "row",
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 14
+  },
+  contactsButtonText: {
+    color: colors.deepGreen,
+    flex: 1,
+    fontSize: 15,
+    fontWeight: "900"
+  },
+  addButton: {
     alignItems: "center",
     backgroundColor: colors.deepGreen,
     borderRadius: 14,
     flexDirection: "row",
     gap: 5,
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     paddingVertical: 10
   },
-  messageButtonText: {
+  addButtonDone: {
+    backgroundColor: "#E8F7F0",
+    borderColor: colors.mintGreen,
+    borderWidth: 1
+  },
+  addButtonText: {
     color: colors.white,
     fontSize: 13,
     fontWeight: "900"
+  },
+  addButtonTextDone: {
+    color: colors.deepGreen
+  },
+  emptyText: {
+    color: colors.mutedText,
+    fontSize: 14,
+    fontWeight: "700",
+    paddingVertical: 8,
+    textAlign: "center"
+  },
+  avatarSmall: {
+    alignItems: "center",
+    backgroundColor: colors.deepGreen,
+    borderRadius: 18,
+    height: 36,
+    justifyContent: "center",
+    width: 36
+  },
+  contactBody: {
+    flex: 1,
+    gap: 2
   },
   post: {
     alignItems: "center",
@@ -468,11 +599,5 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 10,
     padding: 14
-  },
-  msgPromptText: {
-    color: colors.darkText,
-    flex: 1,
-    fontSize: 14,
-    fontWeight: "800"
   }
 });

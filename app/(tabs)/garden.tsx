@@ -15,7 +15,7 @@ type ActionCard = { title: string; copy: string; accent: string; href: string };
 const recommendedByLevel: Record<ExperienceLevel, ActionCard> = {
   beginner: {
     title: "Recommended Next Action",
-    copy: "Start Budgeting Basics — track expected vs. actual spending.",
+    copy: "Start Budgeting Basics: track expected vs. actual spending.",
     accent: colors.roseRed,
     href: "/lesson/budgeting-expected-actual"
   },
@@ -71,7 +71,7 @@ export default function GardenDashboardScreen() {
       </View>
 
       <View style={styles.header}>
-        <Text style={styles.eyebrow}>Financial Garden</Text>
+        <Text style={styles.eyebrow}>Flourish</Text>
         <Text style={styles.title}>Your money habits are blooming.</Text>
       </View>
 

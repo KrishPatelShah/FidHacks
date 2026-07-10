@@ -27,7 +27,7 @@ export default function SunflowerScreen() {
     {
       id: nextId(),
       role: "sunflower",
-      text: "Hi, I'm your Sunflower tutor. Ask me anything about money basics — budgeting, credit, saving, retirement, or investing. I explain simply and never give personalized advice."
+      text: "Hi, I'm your Sunflower tutor. Ask me anything about money basics: budgeting, credit, saving, retirement, or investing. I explain simply and never give personalized advice."
     }
   ]);
   const [draft, setDraft] = useState("");
@@ -100,7 +100,7 @@ export default function SunflowerScreen() {
         </Pressable>
       </View>
 
-      <Text style={styles.disclaimer}>Educational guidance only — not personalized financial, tax, legal, or investment advice.</Text>
+      <Text style={styles.disclaimer}>Educational guidance only, not personalized financial, tax, legal, or investment advice.</Text>
     </KeyboardAvoidingView>
   );
 }

@@ -1,4 +1,4 @@
-# Financial Garden Backend
+# Flourish Backend
 
 This backend is a FastAPI service backed by PostgreSQL.
 

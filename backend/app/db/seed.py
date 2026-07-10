@@ -110,7 +110,7 @@ MODULES = [
                 "title": "Expected vs. Actual Spending",
                 "difficulty": "beginner",
                 "summary": "Learn why comparing planned spending with what actually happened is the foundation of every successful budget.",
-                "source_url": "https://www.consumerfinance.gov/consumer-tools/budgeting/",
+                "source_url": "https://econumo.com/posts/budget-vs-actual/",
                 "reward": {"sunlight": 1, "water": 1},
             },
             {
@@ -118,7 +118,7 @@ MODULES = [
                 "title": "Needs vs. Wants",
                 "difficulty": "beginner",
                 "summary": "Understand how to separate essential expenses from discretionary spending so you can make smarter financial decisions.",
-                "source_url": "https://www.fidelity.com/learning-center/personal-finance/how-to-save-money",
+                "source_url": "https://www.fidelity.com/learning-center/personal-finance/spending-and-saving",
                 "reward": {"sunlight": 1, "water": 1},
             },
             {
@@ -126,7 +126,7 @@ MODULES = [
                 "title": "Tracking Every Dollar",
                 "difficulty": "beginner",
                 "summary": "Discover practical ways to record your income and expenses so your budget reflects reality instead of guesses.",
-                "source_url": "https://www.consumerfinance.gov/consumer-tools/track-your-spending/",
+                "source_url": "https://www.consumerfinance.gov/owning-a-home/prepare/assess-your-spending/",
                 "reward": {"sunlight": 2, "water": 1},
             },
             {
@@ -134,7 +134,7 @@ MODULES = [
                 "title": "Fixed vs. Variable Expenses",
                 "difficulty": "beginner",
                 "summary": "Learn which expenses stay consistent each month and which fluctuate so you can plan with confidence.",
-                "source_url": "https://www.nerdwallet.com/article/finance/fixed-and-variable-expenses",
+                "source_url": "https://www.wellbyfinancial.com/blog/comparing-fixed-variable-costs/",
                 "reward": {"sunlight": 2, "water": 1},
             },
             {
@@ -142,7 +142,7 @@ MODULES = [
                 "title": "Creating Your First Budget",
                 "difficulty": "beginner",
                 "summary": "Combine your income, expenses, and financial priorities into your first complete monthly budget.",
-                "source_url": "https://www.fidelity.com/learning-center/personal-finance/budgeting-basics",
+                "source_url": "https://www.fidelity.com/learning-center/smart-money/how-to-budget",
                 "reward": {"sunlight": 2, "water": 2},
             },
             {
@@ -150,7 +150,7 @@ MODULES = [
                 "title": "Choosing a Budgeting Method",
                 "difficulty": "intermediate",
                 "summary": "Explore budgeting approaches such as percentage-based budgeting and zero-based budgeting to find what works best for you.",
-                "source_url": "https://www.consumerfinance.gov/about-us/blog/budgeting-how-to-create-a-budget-and-stick-to-it/",
+                "source_url": "https://www.nerdwallet.com/article/finance/how-to-budget",
                 "reward": {"sunlight": 2, "water": 2},
             },
             {
@@ -166,7 +166,7 @@ MODULES = [
                 "title": "Planning for Irregular Expenses",
                 "difficulty": "intermediate",
                 "summary": "Prepare for expenses like holidays, insurance, car repairs, and annual subscriptions before they disrupt your budget.",
-                "source_url": "https://www.consumerfinance.gov/about-us/blog/how-to-plan-for-unexpected-expenses/",
+                "source_url": "https://www.fidelity.com/learning-center/personal-finance/savings-plan",
                 "reward": {"sunlight": 3, "water": 2},
             },
             {
@@ -174,7 +174,7 @@ MODULES = [
                 "title": "Improving Your Budget",
                 "difficulty": "intermediate",
                 "summary": "Analyze spending trends, adjust categories, and continuously improve your budget as your financial goals change.",
-                "source_url": "https://www.fidelity.com/learning-center/personal-finance/saving-and-budgeting-money",
+                "source_url": "https://www.khanacademy.org/college-careers-more/personal-finance",
                 "reward": {"sunlight": 3, "water": 3},
             },
             {
@@ -207,7 +207,7 @@ MODULES = [
                 "title": "Setting Savings Goals",
                 "difficulty": "beginner",
                 "summary": "Discover how creating clear short-term and long-term savings goals helps you stay motivated and make better financial decisions.",
-                "source_url": "https://www.consumerfinance.gov/consumer-tools/saving-money/",
+                "source_url": "https://saversbank.com/resources/savers-two-cents-blog/why-you-need-a-savings-goal-and-how-to-set-one/",
                 "reward": {"sunlight": 1, "water": 1},
             },
             {
@@ -223,7 +223,7 @@ MODULES = [
                 "title": "Automating Your Savings",
                 "difficulty": "beginner",
                 "summary": "Understand how automatic transfers and consistent contributions make saving easier and more reliable.",
-                "source_url": "https://www.consumerfinance.gov/about-us/blog/how-automating-your-savings-can-help-you/",
+                "source_url": "https://www.goamplify.com/blog/moneymanagement/automate-your-savings/",
                 "reward": {"sunlight": 2, "water": 1},
             },
             {
@@ -247,7 +247,7 @@ MODULES = [
                 "title": "Using Sinking Funds",
                 "difficulty": "intermediate",
                 "summary": "Learn how setting aside money for planned expenses prevents future financial stress.",
-                "source_url": "https://www.nerdwallet.com/article/finance/what-is-a-sinking-fund",
+                "source_url": "https://justagirlandherblog.com/what-are-sinking-funds/",
                 "reward": {"sunlight": 3, "water": 2},
             },
             {
@@ -255,7 +255,7 @@ MODULES = [
                 "title": "Making Your Savings Grow",
                 "difficulty": "intermediate",
                 "summary": "Explore how interest, compound growth, and smart account choices can help your savings increase over time.",
-                "source_url": "https://www.investor.gov/introduction-investing/investing-basics/compound-interest",
+                "source_url": "https://landmarkcu.com/blog/how-to-grow-your-savings/",
                 "reward": {"sunlight": 3, "water": 2},
             },
             {
@@ -263,7 +263,7 @@ MODULES = [
                 "title": "Avoiding Savings Mistakes",
                 "difficulty": "intermediate",
                 "summary": "Identify common mistakes like inconsistent saving, relying too much on credit, and failing to plan for expenses.",
-                "source_url": "https://www.consumerfinance.gov/consumer-tools/budgeting/",
+                "source_url": "https://www.experian.com/blogs/ask-experian/emergency-savings-mistakes-to-avoid/",
                 "reward": {"sunlight": 3, "water": 3},
             },
             {
@@ -312,7 +312,7 @@ MODULES = [
                 "title": "What Is APR?",
                 "difficulty": "beginner",
                 "summary": "Understand Annual Percentage Rate (APR), how interest works, and why carrying balances can become expensive.",
-                "source_url": "https://www.consumerfinance.gov/ask-cfpb/what-is-a-credit-card-interest-rate-en-47/",
+                "source_url": "https://gosunward.org/articles/apr-meaning/",
                 "reward": {"sunlight": 2, "water": 1},
             },
             {
@@ -320,7 +320,7 @@ MODULES = [
                 "title": "Using Credit Cards Wisely",
                 "difficulty": "beginner",
                 "summary": "Learn how to use credit cards responsibly while avoiding unnecessary interest, fees, and debt.",
-                "source_url": "https://www.fidelity.com/learning-center/personal-finance/credit-card-tips",
+                "source_url": "https://www.greenpath.com/blog/using-credit-cards-wisely/",
                 "reward": {"sunlight": 2, "water": 2},
             },
             {
@@ -328,7 +328,7 @@ MODULES = [
                 "title": "Good Debt vs. Bad Debt",
                 "difficulty": "intermediate",
                 "summary": "Compare common forms of debt including student loans, mortgages, auto loans, and credit cards.",
-                "source_url": "https://www.investor.gov/introduction-investing/general-resources/news-alerts/alerts-bulletins/investor-bulletins/understanding-debt",
+                "source_url": "https://www.fidelity.com/learning-center/smart-money/good-debt-vs-bad-debt",
                 "reward": {"sunlight": 2, "water": 2},
             },
             {
@@ -336,7 +336,7 @@ MODULES = [
                 "title": "Strategies to Pay Off Debt",
                 "difficulty": "intermediate",
                 "summary": "Learn repayment strategies such as the debt snowball and debt avalanche methods.",
-                "source_url": "https://www.consumerfinance.gov/ask-cfpb/what-is-the-best-way-to-pay-off-debt-en-317/",
+                "source_url": "https://dfpi.ca.gov/news/insights/three-steps-to-managing-and-getting-out-of-debt/",
                 "reward": {"sunlight": 3, "water": 2},
             },
             {
@@ -344,7 +344,7 @@ MODULES = [
                 "title": "Improving Your Credit Score",
                 "difficulty": "intermediate",
                 "summary": "Discover habits that improve credit scores, including payment history, credit utilization, and responsible borrowing.",
-                "source_url": "https://www.experian.com/blogs/ask-experian/how-to-improve-your-credit-score/",
+                "source_url": "https://www.experian.com/blogs/ask-experian/ways-to-improve-credit/",
                 "reward": {"sunlight": 3, "water": 2},
             },
             {
@@ -352,7 +352,7 @@ MODULES = [
                 "title": "Avoiding Common Credit Mistakes",
                 "difficulty": "intermediate",
                 "summary": "Identify mistakes that damage credit, such as missed payments, high balances, and excessive applications.",
-                "source_url": "https://consumer.ftc.gov/articles/using-credit",
+                "source_url": "https://www.experian.com/blogs/ask-experian/common-credit-mistakes-to-avoid/",
                 "reward": {"sunlight": 3, "water": 3},
             },
             {
@@ -385,7 +385,7 @@ MODULES = [
                 "title": "The Power of Compound Growth",
                 "difficulty": "beginner",
                 "summary": "Discover how investment growth can accelerate over time and why starting early is one of the biggest advantages in retirement planning.",
-                "source_url": "https://www.investor.gov/introduction-investing/investing-basics/compound-interest",
+                "source_url": "https://www.berkeleycapitalmanagement.com/the-power-of-compound-growth/",
                 "reward": {"sunlight": 1, "water": 1},
             },
             {
@@ -393,7 +393,7 @@ MODULES = [
                 "title": "Understanding Retirement Accounts",
                 "difficulty": "beginner",
                 "summary": "Compare retirement accounts such as 401(k)s, Traditional IRAs, and Roth IRAs and understand their different purposes.",
-                "source_url": "https://www.fidelity.com/retirement-ira/overview",
+                "source_url": "https://fwccu.org/blog/iras-explained-retirement-planning-basics",
                 "reward": {"sunlight": 2, "water": 1},
             },
             {
@@ -409,7 +409,7 @@ MODULES = [
                 "title": "What Is a 401(k) Match?",
                 "difficulty": "beginner",
                 "summary": "Understand how employer contributions work and why taking advantage of a company match can accelerate retirement savings.",
-                "source_url": "https://www.fidelity.com/learning-center/personal-finance/retirement/401k-benefits",
+                "source_url": "https://www.fidelity.com/learning-center/smart-money/average-401k-match",
                 "reward": {"sunlight": 2, "water": 2},
             },
             {
@@ -474,7 +474,7 @@ MODULES = [
                 "title": "Compound Growth",
                 "difficulty": "beginner",
                 "summary": "Understand how investments can grow over time as your earnings generate additional earnings.",
-                "source_url": "https://www.investor.gov/introduction-investing/investing-basics/compound-interest",
+                "source_url": "https://www.fiducientadvisors.com/blog/the-power-of-compounding-how-time-can-be-your-best-investment-ally",
                 "reward": {"sunlight": 1, "water": 1},
             },
             {
@@ -506,7 +506,7 @@ MODULES = [
                 "title": "Mutual Funds vs. ETFs",
                 "difficulty": "intermediate",
                 "summary": "Compare mutual funds and ETFs and understand how investors use them to create diversified portfolios.",
-                "source_url": "https://www.fidelity.com/learning-center/investment-products/etf/what-is-an-etf",
+                "source_url": "https://www.fidelity.com/viewpoints/investing-ideas/mutual-fund-or-etf",
                 "reward": {"sunlight": 3, "water": 2},
             },
             {
@@ -514,7 +514,7 @@ MODULES = [
                 "title": "What Are Index Funds?",
                 "difficulty": "intermediate",
                 "summary": "Learn how index funds track market indexes and why many long-term investors choose passive investing strategies.",
-                "source_url": "https://www.fidelity.com/learning-center/trading-investing/index-funds",
+                "source_url": "https://www.fidelity.com/learning-center/smart-money/what-is-an-index-fund",
                 "reward": {"sunlight": 3, "water": 2},
             },
             {
@@ -522,7 +522,7 @@ MODULES = [
                 "title": "Finding Your Risk Level",
                 "difficulty": "intermediate",
                 "summary": "Discover how your goals, timeline, and comfort with market changes affect investment decisions.",
-                "source_url": "https://www.investor.gov/introduction-investing/general-resources/news-alerts/alerts-bulletins/investor-bulletins/assessing-your-risk",
+                "source_url": "https://www.mheducation.com/highered/blog/2025/06/whats-your-risk-tolerance-how-to-figure-it-out-before-you-invest.html",
                 "reward": {"sunlight": 3, "water": 3},
             },
             {
@@ -530,7 +530,7 @@ MODULES = [
                 "title": "Investing for the Long Term",
                 "difficulty": "intermediate",
                 "summary": "Learn why patience, consistency, and avoiding emotional decisions are important for successful investing.",
-                "source_url": "https://investor.vanguard.com/investor-resources-education/article/staying-the-course",
+                "source_url": "https://www.bny.com/wealth/global/en/insights/benefits-of-investing.html",
                 "reward": {"sunlight": 4, "water": 3},
             },
             {
@@ -538,7 +538,7 @@ MODULES = [
                 "title": "Building Your First Portfolio",
                 "difficulty": "intermediate",
                 "summary": "Combine asset allocation, diversification, and risk management to understand how a simple portfolio is created.",
-                "source_url": "https://www.investor.gov/introduction-investing/investing-basics/asset-allocation",
+                "source_url": "https://www.ml.com/articles/how-to-build-investment-portfolio.html",
                 "reward": {"sunlight": 5, "water": 5},
             },
         ],

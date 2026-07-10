@@ -145,7 +145,7 @@ async def test_lessons_and_quizzes_are_available_by_slug(client: AsyncClient) ->
     assert module_body[0]["lessons"][0]["id"] == "budgeting-expected-actual"
     flowers_by_module = {module["id"]: module["flower_name"] for module in module_body}
     assert flowers_by_module["module_retirement"] == "Orchid"
-    assert flowers_by_module["module_investing"] == "Purple Tulip"
+    assert flowers_by_module["module_investing"] == "Investment Flowers"
 
     assert lesson.status_code == 200
     assert lesson.json()["id"] == "budgeting-expected-actual"
@@ -174,7 +174,7 @@ async def test_quiz_attempt_is_scored_and_persisted(
 
     response = await client.post(
         "/api/quizzes/budgeting-expected-actual/attempts",
-        json={"answers": {"budgeting-expected-actual-q1": 1, "budgeting-expected-actual-q2": 0}},
+        json={"answers": {"budgeting-expected-actual-q1": 1, "budgeting-expected-actual-q2": 1}},
         headers=auth_headers,
     )
 
@@ -187,13 +187,13 @@ async def test_quiz_attempt_is_scored_and_persisted(
             "id": "budgeting-expected-actual-q1",
             "correct": True,
             "correct_index": 1,
-            "explanation": "The gap is a learning signal. It helps explain what changed.",
+            "explanation": "The gap between planned and real spending is a learning signal that helps explain what changed.",
         },
         {
             "id": "budgeting-expected-actual-q2",
             "correct": True,
-            "correct_index": 0,
-            "explanation": "Budget logging is a practice habit, so it earns fertilizer.",
+            "correct_index": 1,
+            "explanation": "Needs are essential expenses like housing, food, and utilities; wants are discretionary.",
         },
     ]
     assert body["earned"] == {"sunlight": 1, "water": 1}
@@ -211,7 +211,7 @@ async def test_quiz_attempt_is_scored_and_persisted(
 
     repeated = await client.post(
         "/api/quizzes/budgeting-expected-actual/attempts",
-        json={"answers": {"budgeting-expected-actual-q1": 1, "budgeting-expected-actual-q2": 0}},
+        json={"answers": {"budgeting-expected-actual-q1": 1, "budgeting-expected-actual-q2": 1}},
         headers=auth_headers,
     )
     assert repeated.status_code == 200

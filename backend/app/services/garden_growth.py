@@ -9,6 +9,9 @@ def apply_reward(plant: Plant, reward: dict[str, int]) -> None:
     if min(sunlight, water, fertilizer) < 0:
         raise ValueError("Garden rewards cannot be negative")
 
+    # Earning any resource means the player has started this category, so surface
+    # its bed as unlocked (fresh accounts seed every bed locked at 0 flowers).
+    plant.unlocked = True
     plant.sunlight += sunlight
     plant.water += water
     plant.fertilizer += fertilizer

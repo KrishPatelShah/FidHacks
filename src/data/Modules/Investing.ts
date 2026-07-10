@@ -28,7 +28,7 @@ export const InvestingModule: LearningModule = {
       summary:
         "Understand how investments can grow over time as your earnings generate additional earnings.",
       sourceUrl:
-        "https://www.investor.gov/introduction-investing/investing-basics/compound-interest",
+        "https://www.fiducientadvisors.com/blog/the-power-of-compounding-how-time-can-be-your-best-investment-ally",
       reward: { sunlight: 1, water: 1 },
     },
 
@@ -80,7 +80,7 @@ export const InvestingModule: LearningModule = {
       summary:
         "Compare mutual funds and ETFs and understand how investors use them to create diversified portfolios.",
       sourceUrl:
-        "https://www.fidelity.com/learning-center/investment-products/etf/what-is-an-etf",
+        "https://www.fidelity.com/viewpoints/investing-ideas/mutual-fund-or-etf",
       reward: { sunlight: 3, water: 2 },
     },
 
@@ -93,7 +93,7 @@ export const InvestingModule: LearningModule = {
       summary:
         "Learn how index funds track market indexes and why many long-term investors choose passive investing strategies.",
       sourceUrl:
-        "https://www.fidelity.com/learning-center/trading-investing/index-funds",
+        "https://www.fidelity.com/learning-center/smart-money/what-is-an-index-fund",
       reward: { sunlight: 3, water: 2 },
     },
 
@@ -106,7 +106,7 @@ export const InvestingModule: LearningModule = {
       summary:
         "Discover how your goals, timeline, and comfort with market changes affect investment decisions.",
       sourceUrl:
-        "https://www.investor.gov/introduction-investing/general-resources/news-alerts/alerts-bulletins/investor-bulletins/assessing-your-risk",
+        "https://www.mheducation.com/highered/blog/2025/06/whats-your-risk-tolerance-how-to-figure-it-out-before-you-invest.html",
       reward: { sunlight: 3, water: 3 },
     },
 
@@ -119,7 +119,7 @@ export const InvestingModule: LearningModule = {
       summary:
         "Learn why patience, consistency, and avoiding emotional decisions are important for successful investing.",
       sourceUrl:
-        "https://investor.vanguard.com/investor-resources-education/article/staying-the-course",
+        "https://www.bny.com/wealth/global/en/insights/benefits-of-investing.html",
       reward: { sunlight: 4, water: 3 },
     },
 
@@ -132,7 +132,7 @@ export const InvestingModule: LearningModule = {
       summary:
         "Combine asset allocation, diversification, and risk management to understand how a simple portfolio is created.",
       sourceUrl:
-        "https://www.investor.gov/introduction-investing/investing-basics/asset-allocation",
+        "https://www.ml.com/articles/how-to-build-investment-portfolio.html",
       reward: { sunlight: 5, water: 5 },
     },
   ],

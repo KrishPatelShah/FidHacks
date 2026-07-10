@@ -54,7 +54,7 @@ export const CreditModule: LearningModule = {
       summary:
         "Understand Annual Percentage Rate (APR), how interest works, and why carrying balances can become expensive.",
       sourceUrl:
-        "https://www.consumerfinance.gov/ask-cfpb/what-is-a-credit-card-interest-rate-en-47/",
+        "https://gosunward.org/articles/apr-meaning/",
       reward: { sunlight: 2, water: 1 },
     },
 
@@ -67,7 +67,7 @@ export const CreditModule: LearningModule = {
       summary:
         "Learn how to use credit cards responsibly while avoiding unnecessary interest, fees, and debt.",
       sourceUrl:
-        "https://www.fidelity.com/learning-center/personal-finance/credit-card-tips",
+        "https://www.greenpath.com/blog/using-credit-cards-wisely/",
       reward: { sunlight: 2, water: 2 },
     },
 
@@ -80,7 +80,7 @@ export const CreditModule: LearningModule = {
       summary:
         "Compare common forms of debt including student loans, mortgages, auto loans, and credit cards.",
       sourceUrl:
-        "https://www.investor.gov/introduction-investing/general-resources/news-alerts/alerts-bulletins/investor-bulletins/understanding-debt",
+        "https://www.fidelity.com/learning-center/smart-money/good-debt-vs-bad-debt",
       reward: { sunlight: 2, water: 2 },
     },
 
@@ -93,7 +93,7 @@ export const CreditModule: LearningModule = {
       summary:
         "Learn repayment strategies such as the debt snowball and debt avalanche methods.",
       sourceUrl:
-        "https://www.consumerfinance.gov/ask-cfpb/what-is-the-best-way-to-pay-off-debt-en-317/",
+        "https://dfpi.ca.gov/news/insights/three-steps-to-managing-and-getting-out-of-debt/",
       reward: { sunlight: 3, water: 2 },
     },
 
@@ -106,7 +106,7 @@ export const CreditModule: LearningModule = {
       summary:
         "Discover habits that improve credit scores, including payment history, credit utilization, and responsible borrowing.",
       sourceUrl:
-        "https://www.experian.com/blogs/ask-experian/how-to-improve-your-credit-score/",
+        "https://www.experian.com/blogs/ask-experian/ways-to-improve-credit/",
       reward: { sunlight: 3, water: 2 },
     },
 
@@ -119,7 +119,7 @@ export const CreditModule: LearningModule = {
       summary:
         "Identify mistakes that damage credit, such as missed payments, high balances, and excessive applications.",
       sourceUrl:
-        "https://consumer.ftc.gov/articles/using-credit",
+        "https://www.experian.com/blogs/ask-experian/common-credit-mistakes-to-avoid/",
       reward: { sunlight: 3, water: 3 },
     },
 

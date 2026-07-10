@@ -28,7 +28,7 @@ export const RetirementModule: LearningModule = {
       summary:
         "Discover how investment growth can accelerate over time and why starting early is one of the biggest advantages in retirement planning.",
       sourceUrl:
-        "https://www.investor.gov/introduction-investing/investing-basics/compound-interest",
+        "https://www.berkeleycapitalmanagement.com/the-power-of-compound-growth/",
       reward: { sunlight: 1, water: 1 },
     },
 
@@ -41,7 +41,7 @@ export const RetirementModule: LearningModule = {
       summary:
         "Compare retirement accounts such as 401(k)s, Traditional IRAs, and Roth IRAs and understand their different purposes.",
       sourceUrl:
-        "https://www.fidelity.com/retirement-ira/overview",
+        "https://fwccu.org/blog/iras-explained-retirement-planning-basics",
       reward: { sunlight: 2, water: 1 },
     },
 
@@ -67,7 +67,7 @@ export const RetirementModule: LearningModule = {
       summary:
         "Understand how employer contributions work and why taking advantage of a company match can accelerate retirement savings.",
       sourceUrl:
-        "https://www.fidelity.com/learning-center/personal-finance/retirement/401k-benefits",
+        "https://www.fidelity.com/learning-center/smart-money/average-401k-match",
       reward: { sunlight: 2, water: 2 },
     },
 

@@ -28,7 +28,7 @@ export const SavingsModule: LearningModule = {
       summary:
         "Discover how creating clear short-term and long-term savings goals helps you stay motivated and make better financial decisions.",
       sourceUrl:
-        "https://www.consumerfinance.gov/consumer-tools/saving-money/",
+        "https://saversbank.com/resources/savers-two-cents-blog/why-you-need-a-savings-goal-and-how-to-set-one/",
       reward: { sunlight: 1, water: 1 },
     },
 
@@ -54,7 +54,7 @@ export const SavingsModule: LearningModule = {
       summary:
         "Understand how automatic transfers and consistent contributions make saving easier and more reliable.",
       sourceUrl:
-        "https://www.consumerfinance.gov/about-us/blog/how-automating-your-savings-can-help-you/",
+        "https://www.goamplify.com/blog/moneymanagement/automate-your-savings/",
       reward: { sunlight: 2, water: 1 },
     },
 
@@ -93,7 +93,7 @@ export const SavingsModule: LearningModule = {
       summary:
         "Learn how setting aside money for planned expenses prevents future financial stress.",
       sourceUrl:
-        "https://www.nerdwallet.com/article/finance/what-is-a-sinking-fund",
+        "https://justagirlandherblog.com/what-are-sinking-funds/",
       reward: { sunlight: 3, water: 2 },
     },
 
@@ -106,7 +106,7 @@ export const SavingsModule: LearningModule = {
       summary:
         "Explore how interest, compound growth, and smart account choices can help your savings increase over time.",
       sourceUrl:
-        "https://www.investor.gov/introduction-investing/investing-basics/compound-interest",
+        "https://landmarkcu.com/blog/how-to-grow-your-savings/",
       reward: { sunlight: 3, water: 2 },
     },
 
@@ -119,7 +119,7 @@ export const SavingsModule: LearningModule = {
       summary:
         "Identify common mistakes like inconsistent saving, relying too much on credit, and failing to plan for expenses.",
       sourceUrl:
-        "https://www.consumerfinance.gov/consumer-tools/budgeting/",
+        "https://www.experian.com/blogs/ask-experian/emergency-savings-mistakes-to-avoid/",
       reward: { sunlight: 3, water: 3 },
     },
 

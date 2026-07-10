@@ -282,6 +282,12 @@ def seed(db: Session) -> None:
         },
     )
 
+    # Flush the parent profile row before inserting anything that references it.
+    # The session runs with autoflush disabled and the models declare no ORM
+    # relationships, so SQLAlchemy cannot infer FK insert ordering on its own and
+    # would otherwise try to insert child rows (plants, community posts) first.
+    db.flush()
+
     for plant in PLANTS:
         values = {key: value for key, value in plant.items() if key != "id"}
         values["user_id"] = DEMO_USER_ID

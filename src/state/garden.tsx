@@ -3,7 +3,7 @@ import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, 
 import { achievementDefs } from "@/data/achievements";
 import { demoPlants } from "@/data/plants";
 import { sampleTransactions } from "@/data/transactions";
-import { ApiError, Bootstrap, clearAccessToken, demoLogin, getAccessToken, getBootstrap, QuizAttemptResult } from "@/services/api";
+import { ApiError, Bootstrap, clearAccessToken, demoLogin, getAccessToken, getBootstrap, isBackendUnavailable, QuizAttemptResult } from "@/services/api";
 import { clearAssessment } from "@/services/assessmentStorage";
 import {
   Achievement,
@@ -144,9 +144,10 @@ export function GardenProvider({ children }: { children: ReactNode }) {
             if (error instanceof ApiError && error.status === 401) {
               await clearAccessToken();
               setAccountError("Your demo session expired. Sign in again to load your garden.");
-            } else {
+            } else if (!isBackendUnavailable(error)) {
               setAccountError(error instanceof Error ? error.message : "Could not load your garden.");
             }
+            // Backend unavailable: keep the local demo garden and run offline.
           } finally {
             setLoadingAccount(false);
           }
@@ -168,6 +169,12 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) {
         await clearAccessToken();
+      }
+      // Offline: keep the current (local) garden without surfacing an error so
+      // the learning flow can continue even when the backend is down.
+      if (isBackendUnavailable(error)) {
+        setLoadingAccount(false);
+        return;
       }
       setAccountError(error instanceof Error ? error.message : "Could not load your garden.");
       throw error;
@@ -194,6 +201,31 @@ export function GardenProvider({ children }: { children: ReactNode }) {
         setFlowersGrown((count) => count + result.plant!.quantity - previous.quantity);
       }
       setPlants((current) => current.map((plant) => plant.id === result.plant!.id ? result.plant! : plant));
+    } else if (result.local && result.passed && result.category) {
+      // Offline reward: grow the matching plant client-side since the server
+      // could not verify the attempt.
+      const now = new Date().toISOString();
+      let grew = false;
+      setPlants((current) =>
+        current.map((plant) => {
+          if (plant.type !== result.category) return plant;
+          grew = true;
+          return {
+            ...plant,
+            unlocked: true,
+            quantity: plant.quantity + 1,
+            growth: Math.min(100, plant.growth + 20),
+            stage: plant.stage + 1,
+            water: plant.water + (result.earned.water ?? 0),
+            sunlight: plant.sunlight + (result.earned.sunlight ?? 0),
+            fertilizer: plant.fertilizer + (result.earned.fertilizer ?? 0),
+            updatedAt: now
+          };
+        })
+      );
+      if (grew) setFlowersGrown((count) => count + 1);
+      setLessonsCompleted((count) => count + 1);
+      setQuizzesPassed((count) => count + 1);
     }
     if (result.profile) setStreak(result.profile.streakCount);
     if (typeof result.lessonsCompleted === "number") setLessonsCompleted(result.lessonsCompleted);

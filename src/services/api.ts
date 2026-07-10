@@ -1,14 +1,28 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { LearningModule, Lesson, ParsedReceipt, Plant, UserProfile } from "@/types/domain";
+import { findLesson, learningModules } from "@/data/lessons";
+import { localQuizForCategory } from "@/data/quizBank";
+import { LearningModule, Lesson, ParsedReceipt, PlantCategory, UserProfile, Plant } from "@/types/domain";
 
 const TOKEN_KEY = "financial_garden_access_token";
-const apiUrl = (process.env.EXPO_PUBLIC_API_URL ?? "").replace(/\/$/, "");
+// Every request path in this client already starts with "/api", so strip a
+// trailing slash and a trailing "/api" from the configured base URL to avoid a
+// doubled "/api/api" prefix if the env var includes it.
+const apiUrl = (process.env.EXPO_PUBLIC_API_URL ?? "").replace(/\/$/, "").replace(/\/api$/, "");
 
 export class ApiError extends Error {
   constructor(message: string, public readonly status?: number) {
     super(message);
     this.name = "ApiError";
   }
+}
+
+// The backend is considered "unavailable" (so we should fall back to local demo
+// content) when the URL is unset, the network request itself fails, or the
+// server returns a 5xx. HTTP 4xx responses mean the server is reachable and
+// answered, so those are treated as real errors and re-thrown.
+export function isBackendUnavailable(error: unknown): boolean {
+  if (error instanceof ApiError) return error.status === undefined || error.status >= 500;
+  return true;
 }
 
 type ApiPlant = Omit<Plant, "userId" | "flowerName" | "createdAt" | "updatedAt"> & {
@@ -68,6 +82,10 @@ export type QuizAttemptResult = {
   lessonsCompleted?: number;
   quizzesPassed?: number;
   questionResults: QuizQuestionResult[];
+  // Set when the attempt was graded locally (backend unreachable) so the garden
+  // can apply a client-side growth reward instead of a server-driven one.
+  local?: boolean;
+  category?: PlantCategory;
 };
 
 export type Bootstrap = {
@@ -144,9 +162,16 @@ export async function clearAccessToken() {
 }
 
 export async function demoLogin() {
-  const response = await request<{ access_token: string }>("/api/auth/demo", { method: "POST" });
-  await AsyncStorage.setItem(TOKEN_KEY, response.access_token);
-  return response.access_token;
+  try {
+    const response = await request<{ access_token: string }>("/api/auth/demo", { method: "POST" });
+    await AsyncStorage.setItem(TOKEN_KEY, response.access_token);
+    return response.access_token;
+  } catch (error) {
+    // Offline demo: let the user continue with the fully local garden. We do not
+    // store a token, so authenticated calls simply fall back to local content.
+    if (isBackendUnavailable(error)) return null;
+    throw error;
+  }
 }
 
 export async function getBootstrap(): Promise<Bootstrap> {
@@ -181,25 +206,84 @@ export async function submitQuestionnaire(ratings: Record<string, number>, prima
 }
 
 export async function getLearningModules() {
-  return (await request<ApiModule[]>("/api/lessons")).map(mapModule);
+  try {
+    return (await request<ApiModule[]>("/api/lessons")).map(mapModule);
+  } catch (error) {
+    if (isBackendUnavailable(error)) return learningModules;
+    throw error;
+  }
 }
 
 export async function getLesson(id: string) {
-  return mapLesson(await request<ApiLesson>(`/api/lessons/${encodeURIComponent(id)}`));
+  try {
+    return mapLesson(await request<ApiLesson>(`/api/lessons/${encodeURIComponent(id)}`));
+  } catch (error) {
+    if (isBackendUnavailable(error)) {
+      const local = findLesson(id);
+      if (local) return local;
+    }
+    throw error;
+  }
 }
 
 export async function completeLesson(id: string) {
-  return request<{ lessons_completed?: number }>(`/api/lessons/${encodeURIComponent(id)}/complete`, { method: "POST" }, true);
+  try {
+    return await request<{ lessons_completed?: number }>(`/api/lessons/${encodeURIComponent(id)}/complete`, { method: "POST" }, true);
+  } catch (error) {
+    // Offline: lesson progress is tracked client-side after the quiz instead.
+    if (isBackendUnavailable(error)) return {};
+    throw error;
+  }
 }
 
-export async function getQuizQuestions(lessonId: string) {
-  return request<QuizQuestion[]>(`/api/quizzes/${encodeURIComponent(lessonId)}`);
+export async function getQuizQuestions(lessonId: string): Promise<QuizQuestion[]> {
+  try {
+    return await request<QuizQuestion[]>(`/api/quizzes/${encodeURIComponent(lessonId)}`);
+  } catch (error) {
+    if (isBackendUnavailable(error)) {
+      const category = findLesson(lessonId)?.category ?? "budgeting";
+      return localQuizForCategory(category).map((question) => ({
+        id: question.id,
+        prompt: question.prompt,
+        options: question.options,
+        explanation: question.explanation
+      }));
+    }
+    throw error;
+  }
+}
+
+function gradeLocalQuiz(lessonId: string, answers: Record<string, number>): QuizAttemptResult {
+  const category = findLesson(lessonId)?.category ?? "budgeting";
+  const questions = localQuizForCategory(category);
+  let correct = 0;
+  const questionResults: QuizQuestionResult[] = questions.map((question) => {
+    const isCorrect = answers[question.id] === question.correctIndex;
+    if (isCorrect) correct += 1;
+    return { id: question.id, correct: isCorrect, correctIndex: question.correctIndex, explanation: question.explanation };
+  });
+  const score = questions.length ? Math.round((correct / questions.length) * 100) : 0;
+  const passed = score >= 60;
+  return {
+    score,
+    passed,
+    earned: passed ? { water: 1, sunlight: 1 } : {},
+    questionResults,
+    local: true,
+    category
+  };
 }
 
 export async function submitQuizAttempt(lessonId: string, answers: Record<string, number>): Promise<QuizAttemptResult> {
-  const result = await request<ApiQuizAttempt>(`/api/quizzes/${encodeURIComponent(lessonId)}/attempts`, {
-    method: "POST", body: JSON.stringify({ answers })
-  }, true);
+  let result: ApiQuizAttempt;
+  try {
+    result = await request<ApiQuizAttempt>(`/api/quizzes/${encodeURIComponent(lessonId)}/attempts`, {
+      method: "POST", body: JSON.stringify({ answers })
+    }, true);
+  } catch (error) {
+    if (isBackendUnavailable(error)) return gradeLocalQuiz(lessonId, answers);
+    throw error;
+  }
   return {
     score: result.score,
     passed: result.passed,

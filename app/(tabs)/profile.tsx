@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
 import { FlowerIcon } from "@/components/FlowerIcon";
 import { ProgressBar } from "@/components/ProgressBar";
+import { TopNav } from "@/components/TopNav";
 import { achievementDefs } from "@/data/achievements";
 import { useGarden } from "@/state/garden";
 import { colors, shadow } from "@/theme/colors";
@@ -21,6 +22,8 @@ export default function ProfileScreen() {
     riskProfile,
     confidenceLevel,
     unlockedAchievements,
+    dyslexiaMode,
+    setDyslexiaMode,
     resetLocalDemoData
   } = useGarden();
 
@@ -39,6 +42,7 @@ export default function ProfileScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.screen}>
+      <TopNav showProfile={false} />
       <View style={styles.header}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>DG</Text>
@@ -113,6 +117,25 @@ export default function ProfileScreen() {
             </View>
           );
         })}
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Accessibility</Text>
+        <View style={styles.settingRow}>
+          <View style={styles.settingIcon}>
+            <Ionicons color={colors.deepGreen} name="text" size={20} />
+          </View>
+          <View style={styles.settingBody}>
+            <Text style={styles.settingTitle}>Dyslexia-friendly font</Text>
+            <Text style={styles.settingDesc}>Switch the whole app to the OpenDyslexic typeface for easier reading.</Text>
+          </View>
+          <Switch
+            value={dyslexiaMode}
+            onValueChange={setDyslexiaMode}
+            thumbColor={colors.white}
+            trackColor={{ false: "#D7C7A6", true: colors.deepGreen }}
+          />
+        </View>
       </View>
 
       <View style={styles.note}>
@@ -289,6 +312,33 @@ const styles = StyleSheet.create({
     fontWeight: "900"
   },
   achievementDesc: {
+    color: colors.mutedText,
+    fontSize: 12,
+    lineHeight: 17
+  },
+  settingRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 12
+  },
+  settingIcon: {
+    alignItems: "center",
+    backgroundColor: "#E8F7F0",
+    borderRadius: 14,
+    height: 40,
+    justifyContent: "center",
+    width: 40
+  },
+  settingBody: {
+    flex: 1,
+    gap: 3
+  },
+  settingTitle: {
+    color: colors.darkText,
+    fontSize: 15,
+    fontWeight: "900"
+  },
+  settingDesc: {
     color: colors.mutedText,
     fontSize: 12,
     lineHeight: 17

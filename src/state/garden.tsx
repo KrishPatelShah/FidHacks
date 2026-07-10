@@ -33,6 +33,7 @@ type PersistedState = {
   unlockedAchievements: string[];
   streak: number;
   lastActiveISO: string | null;
+  dyslexiaMode: boolean;
 };
 
 export type ReceiptCommitResult = {
@@ -58,6 +59,7 @@ type GardenContextValue = {
   experienceLevel: ExperienceLevel;
   confidenceAssessment: ConfidenceAssessment | null;
   confidenceLevel: ConfidenceLevel | null;
+  dyslexiaMode: boolean;
   totals: { sunlight: number; water: number; fertilizer: number };
   totalFlowers: number;
   unlockedAchievements: string[];
@@ -68,6 +70,7 @@ type GardenContextValue = {
   commitReceipt: (receipt: ParsedReceipt) => ReceiptCommitResult;
   setRiskProfile: (profile: RiskProfile) => void;
   setExperienceLevel: (level: ExperienceLevel) => void;
+  setDyslexiaMode: (value: boolean) => void;
   saveConfidenceAssessment: (assessment: ConfidenceAssessment, profile: RiskProfile) => void;
   startFreshGarden: () => void;
   dismissCelebration: () => void;
@@ -112,6 +115,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   const [riskProfile, setRiskProfileState] = useState<RiskProfile>("Moderate");
   const [experienceLevel, setExperienceLevelState] = useState<ExperienceLevel>("beginner");
   const [confidenceAssessment, setConfidenceAssessment] = useState<ConfidenceAssessment | null>(null);
+  const [dyslexiaMode, setDyslexiaModeState] = useState(false);
   const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>([]);
   const [celebrationQueue, setCelebrationQueue] = useState<Achievement[]>([]);
   const [hydrated, setHydrated] = useState(false);
@@ -142,6 +146,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
           if (parsed.riskProfile) setRiskProfileState(parsed.riskProfile);
           if (parsed.experienceLevel) setExperienceLevelState(parsed.experienceLevel);
           if (parsed.confidenceAssessment) setConfidenceAssessment(parsed.confidenceAssessment);
+          if (typeof parsed.dyslexiaMode === "boolean") setDyslexiaModeState(parsed.dyslexiaMode);
           if (Array.isArray(parsed.unlockedAchievements)) setUnlockedAchievements(parsed.unlockedAchievements);
 
           // Reconcile the daily streak against today's date: the same day keeps
@@ -277,10 +282,11 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       confidenceAssessment,
       unlockedAchievements,
       streak,
-      lastActiveISO
+      lastActiveISO,
+      dyslexiaMode
     };
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(state)).catch(() => {});
-  }, [budgetsLogged, investmentsPlanted, receiptsScanned, transactions, riskProfile, experienceLevel, confidenceAssessment, unlockedAchievements, streak, lastActiveISO]);
+  }, [budgetsLogged, investmentsPlanted, receiptsScanned, transactions, riskProfile, experienceLevel, confidenceAssessment, unlockedAchievements, streak, lastActiveISO, dyslexiaMode]);
 
   const totals = useMemo(
     () =>
@@ -361,6 +367,8 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   const setRiskProfile = useCallback((profile: RiskProfile) => setRiskProfileState(profile), []);
 
   const setExperienceLevel = useCallback((level: ExperienceLevel) => setExperienceLevelState(level), []);
+
+  const setDyslexiaMode = useCallback((value: boolean) => setDyslexiaModeState(value), []);
 
   const saveConfidenceAssessment = useCallback((assessment: ConfidenceAssessment, profile: RiskProfile) => {
     setConfidenceAssessment(assessment);
@@ -465,6 +473,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       experienceLevel,
       confidenceAssessment,
       confidenceLevel: confidenceAssessment?.level ?? null,
+      dyslexiaMode,
       totals,
       totalFlowers,
       unlockedAchievements,
@@ -475,6 +484,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       commitReceipt,
       setRiskProfile,
       setExperienceLevel,
+      setDyslexiaMode,
       saveConfidenceAssessment,
       startFreshGarden,
       dismissCelebration,
@@ -499,6 +509,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       riskProfile,
       experienceLevel,
       confidenceAssessment,
+      dyslexiaMode,
       totals,
       totalFlowers,
       unlockedAchievements,
@@ -509,6 +520,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       commitReceipt,
       setRiskProfile,
       setExperienceLevel,
+      setDyslexiaMode,
       saveConfidenceAssessment,
       startFreshGarden,
       dismissCelebration,

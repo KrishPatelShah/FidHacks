@@ -3,6 +3,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { BackButton } from "@/components/BackButton";
+import { ProfileButton } from "@/components/ProfileButton";
 import { FlowerIcon } from "@/components/FlowerIcon";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { getQuizQuestions, QuizAttemptResult, QuizQuestion, submitQuizAttempt } from "@/services/api";
@@ -52,6 +53,7 @@ export default function QuizScreen() {
   return (
     <View style={styles.root}>
       <BackButton />
+      <ProfileButton />
       <ScrollView contentContainerStyle={styles.screen}>
       <View style={styles.header}>
         <Text style={styles.eyebrow}>Low-pressure quiz</Text>

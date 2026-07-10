@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { FlowerIcon } from "@/components/FlowerIcon";
 import { GardenPreview } from "@/components/GardenPreview";
+import { TopNav } from "@/components/TopNav";
 import { achievementDefs } from "@/data/achievements";
 import { demoCommunityPosts, discoverPeople, friendFlowerCount, friendFlowerTypes, friendPlants, friends } from "@/data/community";
 import { useGarden } from "@/state/garden";
@@ -58,6 +59,7 @@ export default function CommunityScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.screen}>
+      <TopNav />
       <View style={styles.header}>
         <Text style={styles.title}>Community Garden</Text>
         <Text style={styles.subtitle}>Privacy-safe progress only. No income, savings, debt, or spending amounts are ever shown.</Text>

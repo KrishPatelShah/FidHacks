@@ -4,8 +4,9 @@ import * as ImagePicker from "expo-image-picker";
 import { useMemo, useState } from "react";
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { PieChart } from "react-native-gifted-charts";
-import { ProgressBar } from "@/components/ProgressBar";
+import { FlowerIcon } from "@/components/FlowerIcon";
 import { ReceiptReviewModal } from "@/components/ReceiptReviewModal";
+import { TopNav } from "@/components/TopNav";
 import { spendCategoryLabels } from "@/data/transactions";
 import { scanReceipt, ScanResult } from "@/services/receiptScanner";
 import { useGarden } from "@/state/garden";
@@ -30,6 +31,21 @@ const targets: Record<BudgetGroup, number> = { needs: 0.5, wants: 0.3, save: 0.2
 const groupOrder: BudgetGroup[] = ["needs", "wants", "save"];
 
 const manualCategories: SpendCategory[] = ["needs", "wants", "save", "income"];
+
+// Each spending group is presented as a themed garden "bed" with a matching flower.
+const bedMeta: Record<BudgetGroup, { bedName: string; flower: string }> = {
+  needs: { bedName: "Leafy Lettuce Bed", flower: "Daisy" },
+  wants: { bedName: "Sun-Kissed Petals", flower: "Marigold" },
+  save: { bedName: "Silver Shrub Row", flower: "Blue Iris" }
+};
+
+// Health of a bed based on how much of its goal has been spent.
+function bedStatus(spent: number, goal: number): { label: string; color: string; tint: string } {
+  const ratio = goal > 0 ? spent / goal : 0;
+  if (ratio > 1) return { label: "THIRSTY", color: colors.roseRed, tint: "#FBE4E4" };
+  if (ratio >= 0.55) return { label: "LUSH", color: colors.deepGreen, tint: "#E3F4EA" };
+  return { label: "GROWING", color: colors.skyBlue, tint: "#E4F0F7" };
+}
 
 function formatMoney(amount: number) {
   return `$${amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
@@ -65,6 +81,9 @@ export default function BudgetScreen() {
     const income = totals.income || allocated || 1;
     return { totals, allocated, income };
   }, [transactions]);
+
+  const remaining = Math.max(groups.income - groups.allocated, 0);
+  const nutrientPct = groups.income > 0 ? Math.round((remaining / groups.income) * 100) : 0;
 
   const pieData = useMemo(
     () =>
@@ -166,23 +185,102 @@ export default function BudgetScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled">
+      <TopNav />
       <View style={styles.header}>
-        <Text style={styles.title}>Budget Garden</Text>
-        <Text style={styles.subtitle}>Track purchases and keep your 50/30/20 balance.</Text>
+        <Text style={styles.eyebrow}>Financial Garden</Text>
+        <Text style={styles.title}>Your money habits are blooming.</Text>
       </View>
+
+      <View style={styles.hydrationCard}>
+        <View style={styles.hydrationIcons}>
+          {groupOrder.map((group) => (
+            <View key={group} style={styles.hydrationIconWrap}>
+              <FlowerIcon name={bedMeta[group].flower} size={34} />
+            </View>
+          ))}
+        </View>
+        <Text style={styles.hydrationTitle}>Garden Hydration</Text>
+        <Text style={styles.hydrationCopy}>
+          Your garden grows through mindful, balanced spending. {nutrientPct}% nutrients remaining this month.
+        </Text>
+        <View style={styles.hydrationBar}>
+          <View style={[styles.hydrationFill, { width: `${nutrientPct}%` }]} />
+        </View>
+        <Text style={styles.hydrationMoney}>
+          {formatMoneyExact(remaining)}
+          <Text style={styles.hydrationMoneySub}>  REMAINING of {formatMoneyExact(groups.income)}</Text>
+        </Text>
+      </View>
+
+      <View style={styles.actionRow}>
+        <TouchableOpacity onPress={() => setChooserOpen(true)} style={[styles.actionButton, styles.primaryAction]} disabled={scanning}>
+          <Ionicons color={colors.white} name="scan" size={20} />
+          <Text style={styles.primaryActionText}>{scanning ? "Scanning…" : "Scan Receipt"}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => setManualOpen(true)} style={[styles.actionButton, styles.secondaryAction]}>
+          <Ionicons color={colors.deepGreen} name="create" size={20} />
+          <Text style={styles.secondaryActionText}>Manual Entry</Text>
+        </TouchableOpacity>
+      </View>
+
+      {savedNote ? (
+        <View style={styles.savedCard}>
+          <Ionicons color={colors.deepGreen} name="leaf" size={18} />
+          <Text style={styles.savedText}>{savedNote}</Text>
+        </View>
+      ) : null}
+
+      <Text style={styles.sectionTitle}>Your garden beds</Text>
+      {groupOrder.map((group) => {
+        const spent = groups.totals[group];
+        const goalMoney = groups.income * targets[group];
+        const status = bedStatus(spent, goalMoney);
+        const over = spent > goalMoney;
+        const progress = goalMoney > 0 ? Math.min(spent / goalMoney, 1) : 0;
+        return (
+          <View key={group} style={styles.bedCard}>
+            <View style={[styles.bedIcon, { backgroundColor: status.tint }]}>
+              <FlowerIcon name={bedMeta[group].flower} size={20} />
+            </View>
+            <View style={styles.bedBody}>
+              <View style={styles.bedTopRow}>
+                <Text style={styles.bedTitleLine} numberOfLines={1}>
+                  <Text style={styles.bedTitle}>{spendCategoryLabels[group]}</Text>
+                  <Text style={styles.bedSub}>  {bedMeta[group].bedName}</Text>
+                </Text>
+                <View style={[styles.statusBadge, { backgroundColor: status.tint }]}>
+                  <Text style={[styles.statusBadgeText, { color: status.color }]}>{status.label}</Text>
+                </View>
+              </View>
+              <View style={styles.bedBottomRow}>
+                <View style={styles.bedBar}>
+                  <View style={[styles.bedFill, { width: `${Math.round(progress * 100)}%`, backgroundColor: status.color }]} />
+                </View>
+                <Text style={styles.bedMoney}>
+                  <Text style={[styles.bedMoneyValue, over && styles.over]}>
+                    {over ? `${formatMoneyExact(spent - goalMoney)} OVER` : formatMoneyExact(spent)}
+                  </Text>
+                  <Text style={styles.bedMoneySub}> of {formatMoney(goalMoney)}</Text>
+                </Text>
+              </View>
+            </View>
+          </View>
+        );
+      })}
 
       <View style={styles.card}>
         <View style={styles.cardHeader}>
-          <Text style={styles.sectionTitle}>50 / 30 / 20 this month</Text>
+          <Text style={styles.sectionTitle}>50 / 30 / 20 split</Text>
           <Text style={styles.allocated}>{formatMoney(groups.income)} income</Text>
         </View>
 
         <View style={styles.chartWrap}>
           <PieChart
+            key={`${groups.totals.needs}-${groups.totals.wants}-${groups.totals.save}`}
             data={pieData}
             donut
-            radius={108}
-            innerRadius={68}
+            radius={104}
+            innerRadius={66}
             strokeWidth={2}
             strokeColor={colors.card}
             centerLabelComponent={() => (
@@ -208,65 +306,20 @@ export default function BudgetScreen() {
             );
           })}
         </View>
-
-        {groupOrder.map((group) => {
-          const spent = groups.totals[group];
-          const goalPct = targets[group];
-          const goalMoney = groups.income * goalPct;
-          const actualPct = spent / groups.income;
-          const progress = goalMoney > 0 ? Math.min(spent / goalMoney, 1.25) : 0;
-          const over = actualPct > goalPct + 0.02;
-          const under = actualPct < goalPct - 0.02;
-          const remaining = Math.max(goalMoney - spent, 0);
-          const overBy = Math.max(spent - goalMoney, 0);
-
-          return (
-            <View key={group} style={styles.groupRow}>
-              <View style={styles.groupTop}>
-                <View style={styles.groupLabelWrap}>
-                  <View style={[styles.dot, { backgroundColor: categoryMeta[group].color }]} />
-                  <Text style={styles.groupLabel}>{spendCategoryLabels[group]}</Text>
-                </View>
-                <Text style={[styles.groupPct, over && styles.over, under && group === "save" && styles.over]}>
-                  {Math.round(actualPct * 100)}% / {Math.round(goalPct * 100)}%
-                </Text>
-              </View>
-              <ProgressBar progress={Math.min(progress, 1)} color={categoryMeta[group].color} />
-              <View style={styles.moneyRow}>
-                <Text style={styles.groupStatus}>
-                  {formatMoneyExact(spent)} of {formatMoneyExact(goalMoney)} goal
-                </Text>
-                <Text style={[styles.groupStatus, over ? styles.over : under && group === "save" ? styles.over : styles.onTrack]}>
-                  {over ? `${formatMoneyExact(overBy)} over` : under ? `${formatMoneyExact(remaining)} left` : "On target"}
-                </Text>
-              </View>
-            </View>
-          );
-        })}
-
-        <View style={styles.guidance}>
-          <Ionicons color={colors.deepGreen} name="bulb" size={16} />
-          <Text style={styles.guidanceText}>{guidance}</Text>
-        </View>
       </View>
 
-      <View style={styles.actionRow}>
-        <TouchableOpacity onPress={() => setChooserOpen(true)} style={[styles.actionButton, styles.primaryAction]} disabled={scanning}>
-          <Ionicons color={colors.white} name="scan" size={20} />
-          <Text style={styles.primaryActionText}>{scanning ? "Scanning…" : "Scan Receipt"}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => setManualOpen(true)} style={[styles.actionButton, styles.secondaryAction]}>
-          <Ionicons color={colors.deepGreen} name="create" size={20} />
-          <Text style={styles.secondaryActionText}>Manual Entry</Text>
-        </TouchableOpacity>
-      </View>
-
-      {savedNote ? (
-        <View style={styles.savedCard}>
-          <Ionicons color={colors.deepGreen} name="leaf" size={18} />
-          <Text style={styles.savedText}>{savedNote}</Text>
+      <View style={styles.proTip}>
+        <View style={styles.proTipHeader}>
+          <Ionicons color={colors.sunflowerYellow} name="bulb" size={18} />
+          <Text style={styles.proTipEyebrow}>Gardener's Pro-Tip</Text>
         </View>
-      ) : null}
+        <Text style={styles.proTipText}>{guidance}</Text>
+        <Link href="/sunflower" asChild>
+          <TouchableOpacity style={styles.proTipButton}>
+            <Text style={styles.proTipButtonText}>Ask Sunflower</Text>
+          </TouchableOpacity>
+        </Link>
+      </View>
 
       <View style={styles.searchBar}>
         <Ionicons color={colors.mutedText} name="search" size={18} />
@@ -321,16 +374,6 @@ export default function BudgetScreen() {
             );
           })
         )}
-      </View>
-
-      <View style={styles.insightCard}>
-        <Text style={styles.insightTitle}>Gentle insight</Text>
-        <Text style={styles.insightCopy}>Want to understand a spending gap? Sunflower can explain it in plain language.</Text>
-        <Link href="/sunflower" asChild>
-          <TouchableOpacity style={styles.askButton}>
-            <Text style={styles.askButtonText}>Ask Sunflower to Explain</Text>
-          </TouchableOpacity>
-        </Link>
       </View>
 
       <Modal transparent animationType="fade" visible={chooserOpen} onRequestClose={() => setChooserOpen(false)}>
@@ -416,18 +459,191 @@ const styles = StyleSheet.create({
     paddingTop: 64
   },
   header: {
-    gap: 8
+    gap: 6
+  },
+  eyebrow: {
+    color: colors.deepGreen,
+    fontSize: 13,
+    fontWeight: "900",
+    letterSpacing: 0.5,
+    textTransform: "uppercase"
   },
   title: {
     color: colors.darkText,
     fontSize: 34,
     fontWeight: "900",
-    letterSpacing: -0.5
+    letterSpacing: -0.5,
+    lineHeight: 39
   },
   subtitle: {
     color: colors.mutedText,
     fontSize: 16,
     lineHeight: 23
+  },
+  hydrationCard: {
+    backgroundColor: "#E7F4EC",
+    borderRadius: 28,
+    gap: 12,
+    padding: 20,
+    ...shadow
+  },
+  hydrationIcons: {
+    flexDirection: "row",
+    gap: 8
+  },
+  hydrationIconWrap: {
+    alignItems: "center",
+    backgroundColor: colors.white,
+    borderRadius: 16,
+    height: 52,
+    justifyContent: "center",
+    width: 52
+  },
+  hydrationTitle: {
+    color: colors.darkText,
+    fontSize: 20,
+    fontWeight: "900"
+  },
+  hydrationCopy: {
+    color: colors.mutedText,
+    fontSize: 14,
+    fontWeight: "700",
+    lineHeight: 20
+  },
+  hydrationBar: {
+    backgroundColor: "#C9E6D4",
+    borderRadius: 999,
+    height: 10,
+    overflow: "hidden"
+  },
+  hydrationFill: {
+    backgroundColor: colors.deepGreen,
+    borderRadius: 999,
+    height: "100%"
+  },
+  hydrationMoney: {
+    color: colors.darkText,
+    fontSize: 24,
+    fontWeight: "900"
+  },
+  hydrationMoneySub: {
+    color: colors.mutedText,
+    fontSize: 12,
+    fontWeight: "800"
+  },
+  bedCard: {
+    alignItems: "center",
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    flexDirection: "row",
+    gap: 10,
+    padding: 10,
+    ...shadow
+  },
+  bedIcon: {
+    alignItems: "center",
+    borderRadius: 14,
+    height: 46,
+    justifyContent: "center",
+    width: 46
+  },
+  bedBody: {
+    flex: 1,
+    gap: 8
+  },
+  bedTopRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "space-between"
+  },
+  bedTitleLine: {
+    flex: 1
+  },
+  bedBottomRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 10
+  },
+  statusBadge: {
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3
+  },
+  statusBadgeText: {
+    fontSize: 10,
+    fontWeight: "900",
+    letterSpacing: 0.6
+  },
+  bedTitle: {
+    color: colors.darkText,
+    fontSize: 15,
+    fontWeight: "900"
+  },
+  bedSub: {
+    color: colors.mutedText,
+    fontSize: 12,
+    fontWeight: "700"
+  },
+  bedBar: {
+    backgroundColor: "#EADCC0",
+    borderRadius: 999,
+    flex: 1,
+    height: 7,
+    overflow: "hidden"
+  },
+  bedFill: {
+    borderRadius: 999,
+    height: "100%"
+  },
+  bedMoney: {
+    flexShrink: 0
+  },
+  bedMoneyValue: {
+    color: colors.darkText,
+    fontSize: 13,
+    fontWeight: "900"
+  },
+  bedMoneySub: {
+    color: colors.mutedText,
+    fontSize: 12,
+    fontWeight: "700"
+  },
+  proTip: {
+    backgroundColor: colors.deepGreen,
+    borderRadius: 26,
+    gap: 10,
+    padding: 20
+  },
+  proTipHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8
+  },
+  proTipEyebrow: {
+    color: colors.sunflowerYellow,
+    fontSize: 12,
+    fontWeight: "900",
+    letterSpacing: 0.5,
+    textTransform: "uppercase"
+  },
+  proTipText: {
+    color: "#EAF7EF",
+    fontSize: 15,
+    fontWeight: "700",
+    lineHeight: 22
+  },
+  proTipButton: {
+    alignItems: "center",
+    backgroundColor: colors.white,
+    borderRadius: 16,
+    marginTop: 4,
+    padding: 14
+  },
+  proTipButtonText: {
+    color: colors.deepGreen,
+    fontSize: 15,
+    fontWeight: "900"
   },
   card: {
     backgroundColor: colors.card,

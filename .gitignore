@@ -12,6 +12,14 @@ android/
 ios/
 build/
 
+# Python (backend)
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
 # Environment files
 .env
 .env.*
@@ -25,6 +33,14 @@ pnpm-debug.log*
 
 # TypeScript
 *.tsbuildinfo
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+backend/*.db
 
 # OS and editor files
 .DS_Store

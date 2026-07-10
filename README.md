@@ -24,14 +24,23 @@ npm run web
 npm run typecheck
 ```
 
-Create `.env` from `.env.example` when connecting Supabase:
+## Backend (FastAPI + Postgres)
+
+The app is wired to a local FastAPI backend (see `backend/` and `docker-compose.yml`).
 
 ```bash
-EXPO_PUBLIC_SUPABASE_URL=
-EXPO_PUBLIC_SUPABASE_ANON_KEY=
+docker compose up --build        # starts Postgres + the API on http://localhost:8000
 ```
 
-Gemini should not be called directly from the mobile app with an exposed API key. Use a backend route or the included Supabase Edge Function sketch in `supabase/functions/sunflower-chat/index.ts`.
+Point the app at the backend by copying `.env.example` to `.env`:
+
+```bash
+EXPO_PUBLIC_API_URL=http://localhost:8000/api
+```
+
+The app signs in as a demo user automatically, hydrates the garden from Postgres, and routes the Sunflower chat and receipt scanning through the backend. If the backend is offline, the app falls back to local demo data so it always runs.
+
+Gemini is never called directly from the mobile app. The Gemini key lives only on the backend — set `GEMINI_API_KEY` in `backend/.env` to enable real receipt OCR (`POST /api/receipts/scan`); otherwise a built-in demo receipt is returned.
 
 ## App Concept
 
@@ -94,9 +103,8 @@ Purpose: let users create an account and save progress.
 
 Implementation:
 
-- Use Supabase Auth for production.
-- Hard-code demo auth for hackathon flow.
-- Support email/password sign up and login.
+- Demo auth against the FastAPI backend (`POST /api/auth/demo`).
+- Support email/password sign up and login UI (demo flow).
 - Include `Continue as Demo User`.
 
 Data saved:
@@ -503,41 +511,27 @@ Recommendation: use Gifted Charts for speed.
 
 ### Backend
 
-Use Supabase for:
+A local FastAPI service backed by PostgreSQL (see `backend/` and `docker-compose.yml`) provides:
 
-- Auth.
+- Demo auth.
 - Postgres database.
 - User profiles.
-- Garden progress.
+- Garden progress (plants + growth).
 - Lessons.
 - Quiz results.
 - Budget entries.
 - Community posts.
-- Social garden visibility.
 
-Recommended Supabase tables:
-
-- `profiles`
-- `questionnaire_responses`
-- `plants`
-- `learning_modules`
-- `lessons`
-- `quiz_questions`
-- `quiz_attempts`
-- `budget_entries`
-- `weekly_challenges`
-- `user_challenges`
-- `community_posts`
-- `friend_gardens` or `garden_visibility`
+Tables are defined as SQLAlchemy models under `backend/app/models/` and created via Alembic migrations.
 
 ### AI Layer
 
-Use Gemini API through a backend route or Supabase Edge Function.
+Gemini is called through the FastAPI backend so the API key stays server-side.
 
 Flow:
 
 ```text
-React Native app -> Supabase Edge Function -> Gemini API -> Response back to app
+React Native app -> FastAPI backend -> Gemini API -> Response back to app
 ```
 
 ## Data Model
@@ -665,7 +659,7 @@ type Lesson = {
 };
 ```
 
-## Supabase Table Sketch
+## Database Table Sketch
 
 ### `plants`
 
@@ -718,7 +712,7 @@ type Lesson = {
 | content | text |
 | created_at | timestamp |
 
-The complete starting schema is in `supabase/schema.sql`.
+The complete schema lives in the SQLAlchemy models under `backend/app/models/` and the Alembic migrations in `backend/alembic/`.
 
 ## MVP Build Priority
 

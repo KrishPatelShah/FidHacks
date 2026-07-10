@@ -1,14 +1,19 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
 import { useMemo, useState } from "react";
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { PieChart } from "react-native-gifted-charts";
 import { ProgressBar } from "@/components/ProgressBar";
-import { mockReceipts, spendCategoryLabels } from "@/data/transactions";
+import { ReceiptReviewModal } from "@/components/ReceiptReviewModal";
+import { spendCategoryLabels } from "@/data/transactions";
+import { scanReceipt, ScanResult } from "@/services/receiptScanner";
 import { useGarden } from "@/state/garden";
 import { colors, shadow } from "@/theme/colors";
-import { SpendCategory } from "@/types/domain";
+import { ParsedReceipt, SpendCategory } from "@/types/domain";
 
 type Filter = "all" | SpendCategory;
+type BudgetGroup = "needs" | "wants" | "save";
 
 const filters: Filter[] = ["all", "needs", "wants", "save", "income"];
 const filterLabels: Record<Filter, string> = { all: "All", needs: "Needs", wants: "Wants", save: "Save", income: "Income" };
@@ -21,22 +26,31 @@ const categoryMeta: Record<SpendCategory, { color: string; icon: keyof typeof Io
 };
 
 // 50 / 30 / 20 targets for the three spending groups.
-const targets: Record<"needs" | "wants" | "save", number> = { needs: 0.5, wants: 0.3, save: 0.2 };
-const groupOrder: Array<"needs" | "wants" | "save"> = ["needs", "wants", "save"];
+const targets: Record<BudgetGroup, number> = { needs: 0.5, wants: 0.3, save: 0.2 };
+const groupOrder: BudgetGroup[] = ["needs", "wants", "save"];
 
 const manualCategories: SpendCategory[] = ["needs", "wants", "save", "income"];
 
 function formatMoney(amount: number) {
+  return `$${amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+}
+
+function formatMoneyExact(amount: number) {
   return `$${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 export default function BudgetScreen() {
-  const { transactions, addTransaction, logBudget } = useGarden();
+  const { transactions, addTransaction, logBudget, commitReceipt } = useGarden();
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const [scanning, setScanning] = useState(false);
+  const [chooserOpen, setChooserOpen] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
   const [savedNote, setSavedNote] = useState<string | null>(null);
+
+  const [parsed, setParsed] = useState<ScanResult | null>(null);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [pickedImage, setPickedImage] = useState<string | null>(null);
 
   const [draftMerchant, setDraftMerchant] = useState("");
   const [draftAmount, setDraftAmount] = useState("");
@@ -47,19 +61,30 @@ export default function BudgetScreen() {
     transactions.forEach((txn) => {
       totals[txn.category] += txn.amount;
     });
-    const allocated = totals.needs + totals.wants + totals.save || 1;
-    return { totals, allocated };
+    const allocated = totals.needs + totals.wants + totals.save;
+    const income = totals.income || allocated || 1;
+    return { totals, allocated, income };
   }, [transactions]);
+
+  const pieData = useMemo(
+    () =>
+      groupOrder.map((group) => ({
+        value: Math.max(groups.totals[group], 0.01),
+        color: categoryMeta[group].color,
+        text: `${Math.round((groups.totals[group] / (groups.allocated || 1)) * 100)}%`
+      })),
+    [groups]
+  );
 
   const guidance = useMemo(() => {
     for (const group of groupOrder) {
-      const actual = groups.totals[group] / groups.allocated;
+      const actual = groups.totals[group] / groups.income;
       const diff = actual - targets[group];
       if (group !== "save" && diff > 0.05) {
-        return `${spendCategoryLabels[group]} are a bit high this week — ${Math.round(actual * 100)}% vs a ${Math.round(targets[group] * 100)}% target.`;
+        return `${spendCategoryLabels[group]} are a bit high — ${Math.round(actual * 100)}% of income vs a ${Math.round(targets[group] * 100)}% goal.`;
       }
       if (group === "save" && diff < -0.05) {
-        return `Savings are a little low — you're at ${Math.round(actual * 100)}% vs a ${Math.round(targets.save * 100)}% target. A small transfer helps.`;
+        return `Savings are a little low — ${Math.round(actual * 100)}% of income vs a ${Math.round(targets.save * 100)}% goal. A small transfer helps.`;
       }
     }
     return "Nice balance! Your Needs, Wants, and Save split is close to the 50/30/20 guide.";
@@ -74,15 +99,57 @@ export default function BudgetScreen() {
     });
   }, [transactions, filter, query]);
 
-  function handleScan() {
+  async function pickImage(mode: "camera" | "library") {
+    setChooserOpen(false);
+    try {
+      const permission =
+        mode === "camera"
+          ? await ImagePicker.requestCameraPermissionsAsync()
+          : await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      // Even without permission we still run the demo via the fallback receipt.
+      let result: ImagePicker.ImagePickerResult;
+      if (permission.granted && mode === "camera") {
+        result = await ImagePicker.launchCameraAsync({ base64: true, quality: 0.5 });
+      } else if (permission.granted) {
+        result = await ImagePicker.launchImageLibraryAsync({ base64: true, quality: 0.5, mediaTypes: ImagePicker.MediaTypeOptions.Images });
+      } else {
+        result = { canceled: true, assets: null };
+      }
+
+      if (result.canceled) {
+        // User backed out but still wants to see the demo -> run with fallback.
+        await runScan(null, null);
+        return;
+      }
+
+      const asset = result.assets?.[0];
+      await runScan(asset?.base64 ?? null, asset?.uri ?? null);
+    } catch {
+      await runScan(null, null);
+    }
+  }
+
+  async function runScan(base64: string | null, uri: string | null) {
     setScanning(true);
-    const receipt = mockReceipts[Math.floor(Math.random() * mockReceipts.length)];
-    setTimeout(() => {
-      addTransaction({ ...receipt, source: "scanned" });
-      logBudget();
+    setPickedImage(uri);
+    try {
+      const receipt = await scanReceipt(base64 ?? "", "image/jpeg");
+      setParsed(receipt);
       setScanning(false);
-      setSavedNote(`Scanned ${receipt.merchant} · ${formatMoney(receipt.amount)}`);
-    }, 1400);
+      setReviewOpen(true);
+    } catch {
+      setScanning(false);
+    }
+  }
+
+  function handleAddReceipt(receipt: ParsedReceipt) {
+    const result = commitReceipt(receipt);
+    logBudget();
+    setReviewOpen(false);
+    setParsed(null);
+    setPickedImage(null);
+    setSavedNote(`First Receipt Sprout! Added ${result.added} items from ${receipt.merchant} — a new ${result.flowerName} grew in your garden.`);
   }
 
   function handleManualSave() {
@@ -90,7 +157,7 @@ export default function BudgetScreen() {
     if (!draftMerchant.trim() || !Number.isFinite(amount) || amount <= 0) return;
     addTransaction({ merchant: draftMerchant.trim(), amount, category: draftCategory, source: "manual" });
     logBudget();
-    setSavedNote(`Added ${draftMerchant.trim()} · ${formatMoney(amount)}`);
+    setSavedNote(`Added ${draftMerchant.trim()} · ${formatMoneyExact(amount)}`);
     setDraftMerchant("");
     setDraftAmount("");
     setDraftCategory("needs");
@@ -107,32 +174,76 @@ export default function BudgetScreen() {
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Text style={styles.sectionTitle}>50 / 30 / 20 this month</Text>
-          <Text style={styles.allocated}>{formatMoney(groups.allocated)} allocated</Text>
+          <Text style={styles.allocated}>{formatMoney(groups.income)} income</Text>
         </View>
+
+        <View style={styles.chartWrap}>
+          <PieChart
+            data={pieData}
+            donut
+            radius={108}
+            innerRadius={68}
+            strokeWidth={2}
+            strokeColor={colors.card}
+            centerLabelComponent={() => (
+              <View style={styles.center}>
+                <Text style={styles.centerLabel}>Spent</Text>
+                <Text style={styles.centerValue}>{formatMoney(groups.allocated)}</Text>
+                <Text style={styles.centerSub}>of {formatMoney(groups.income)}</Text>
+              </View>
+            )}
+          />
+        </View>
+
+        <View style={styles.legendRow}>
+          {groupOrder.map((group) => {
+            const share = groups.allocated ? groups.totals[group] / groups.allocated : 0;
+            return (
+              <View key={group} style={styles.legendItem}>
+                <View style={[styles.dot, { backgroundColor: categoryMeta[group].color }]} />
+                <Text style={styles.legendText}>
+                  {spendCategoryLabels[group]} {Math.round(share * 100)}%
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+
         {groupOrder.map((group) => {
-          const actual = groups.totals[group] / groups.allocated;
-          const target = targets[group];
-          const over = actual > target + 0.02;
-          const under = actual < target - 0.02;
+          const spent = groups.totals[group];
+          const goalPct = targets[group];
+          const goalMoney = groups.income * goalPct;
+          const actualPct = spent / groups.income;
+          const progress = goalMoney > 0 ? Math.min(spent / goalMoney, 1.25) : 0;
+          const over = actualPct > goalPct + 0.02;
+          const under = actualPct < goalPct - 0.02;
+          const remaining = Math.max(goalMoney - spent, 0);
+          const overBy = Math.max(spent - goalMoney, 0);
+
           return (
             <View key={group} style={styles.groupRow}>
               <View style={styles.groupTop}>
                 <View style={styles.groupLabelWrap}>
                   <View style={[styles.dot, { backgroundColor: categoryMeta[group].color }]} />
                   <Text style={styles.groupLabel}>{spendCategoryLabels[group]}</Text>
-                  <Text style={styles.groupTarget}>target {Math.round(target * 100)}%</Text>
                 </View>
-                <Text style={[styles.groupPct, over && styles.over, under && group === "save" && styles.over]}>{Math.round(actual * 100)}%</Text>
+                <Text style={[styles.groupPct, over && styles.over, under && group === "save" && styles.over]}>
+                  {Math.round(actualPct * 100)}% / {Math.round(goalPct * 100)}%
+                </Text>
               </View>
-              <ProgressBar progress={actual / Math.max(target * 1.6, actual)} color={categoryMeta[group].color} />
-              <Text style={styles.groupStatus}>
-                {over ? `Over target by ${Math.round((actual - target) * 100)}%` : under ? `Under target by ${Math.round((target - actual) * 100)}%` : "On target"}
-                {"  ·  "}
-                {formatMoney(groups.totals[group])}
-              </Text>
+              <ProgressBar progress={Math.min(progress, 1)} color={categoryMeta[group].color} />
+              <View style={styles.moneyRow}>
+                <Text style={styles.groupStatus}>
+                  {formatMoneyExact(spent)} of {formatMoneyExact(goalMoney)} goal
+                </Text>
+                <Text style={[styles.groupStatus, over ? styles.over : under && group === "save" ? styles.over : styles.onTrack]}>
+                  {over ? `${formatMoneyExact(overBy)} over` : under ? `${formatMoneyExact(remaining)} left` : "On target"}
+                </Text>
+              </View>
             </View>
           );
         })}
+
         <View style={styles.guidance}>
           <Ionicons color={colors.deepGreen} name="bulb" size={16} />
           <Text style={styles.guidanceText}>{guidance}</Text>
@@ -140,7 +251,7 @@ export default function BudgetScreen() {
       </View>
 
       <View style={styles.actionRow}>
-        <TouchableOpacity onPress={handleScan} style={[styles.actionButton, styles.primaryAction]} disabled={scanning}>
+        <TouchableOpacity onPress={() => setChooserOpen(true)} style={[styles.actionButton, styles.primaryAction]} disabled={scanning}>
           <Ionicons color={colors.white} name="scan" size={20} />
           <Text style={styles.primaryActionText}>{scanning ? "Scanning…" : "Scan Receipt"}</Text>
         </TouchableOpacity>
@@ -152,8 +263,8 @@ export default function BudgetScreen() {
 
       {savedNote ? (
         <View style={styles.savedCard}>
-          <Ionicons color={colors.deepGreen} name="checkmark-circle" size={18} />
-          <Text style={styles.savedText}>{savedNote} — logged and your Daisy grew.</Text>
+          <Ionicons color={colors.deepGreen} name="leaf" size={18} />
+          <Text style={styles.savedText}>{savedNote}</Text>
         </View>
       ) : null}
 
@@ -204,7 +315,7 @@ export default function BudgetScreen() {
                 </View>
                 <Text style={[styles.txnAmount, txn.category === "income" && styles.income]}>
                   {txn.category === "income" ? "+" : "-"}
-                  {formatMoney(txn.amount)}
+                  {formatMoneyExact(txn.amount)}
                 </Text>
               </View>
             );
@@ -222,15 +333,48 @@ export default function BudgetScreen() {
         </Link>
       </View>
 
+      <Modal transparent animationType="fade" visible={chooserOpen} onRequestClose={() => setChooserOpen(false)}>
+        <Pressable style={styles.chooserBackdrop} onPress={() => setChooserOpen(false)}>
+          <View style={styles.chooserCard}>
+            <Text style={styles.chooserTitle}>Scan a receipt</Text>
+            <Text style={styles.chooserCopy}>We'll read the items with AI and let you review before saving.</Text>
+            <TouchableOpacity onPress={() => pickImage("camera")} style={styles.chooserOption}>
+              <Ionicons color={colors.deepGreen} name="camera" size={20} />
+              <Text style={styles.chooserOptionText}>Take Photo</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => pickImage("library")} style={styles.chooserOption}>
+              <Ionicons color={colors.deepGreen} name="images" size={20} />
+              <Text style={styles.chooserOptionText}>Choose from Library</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setChooserOpen(false)} style={styles.chooserCancel}>
+              <Text style={styles.chooserCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Modal>
+
       <Modal transparent animationType="fade" visible={scanning}>
         <View style={styles.scanBackdrop}>
           <View style={styles.scanCard}>
             <ActivityIndicator color={colors.deepGreen} size="large" />
-            <Text style={styles.scanTitle}>Scanning receipt…</Text>
-            <Text style={styles.scanCopy}>Reading merchant and total (simulated for the demo).</Text>
+            <Text style={styles.scanTitle}>Reading your receipt…</Text>
+            <Text style={styles.scanCopy}>Extracting merchant, items, and totals with AI.</Text>
           </View>
         </View>
       </Modal>
+
+      <ReceiptReviewModal
+        visible={reviewOpen}
+        receipt={parsed}
+        source={parsed?.source ?? null}
+        imageUri={pickedImage}
+        onCancel={() => {
+          setReviewOpen(false);
+          setParsed(null);
+          setPickedImage(null);
+        }}
+        onConfirm={handleAddReceipt}
+      />
 
       <Modal transparent animationType="slide" visible={manualOpen} onRequestClose={() => setManualOpen(false)}>
         <View style={styles.manualBackdrop}>
@@ -307,6 +451,45 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "800"
   },
+  chartWrap: {
+    alignItems: "center",
+    paddingVertical: 4
+  },
+  center: {
+    alignItems: "center"
+  },
+  centerLabel: {
+    color: colors.mutedText,
+    fontSize: 11,
+    fontWeight: "900",
+    textTransform: "uppercase"
+  },
+  centerValue: {
+    color: colors.darkText,
+    fontSize: 22,
+    fontWeight: "900"
+  },
+  centerSub: {
+    color: colors.mutedText,
+    fontSize: 12,
+    fontWeight: "700"
+  },
+  legendRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+    justifyContent: "center"
+  },
+  legendItem: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 6
+  },
+  legendText: {
+    color: colors.darkText,
+    fontSize: 13,
+    fontWeight: "800"
+  },
   groupRow: {
     gap: 8
   },
@@ -330,18 +513,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "900"
   },
-  groupTarget: {
-    color: colors.mutedText,
-    fontSize: 12,
-    fontWeight: "700"
-  },
   groupPct: {
     color: colors.darkText,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "900"
   },
   over: {
     color: colors.roseRed
+  },
+  onTrack: {
+    color: colors.deepGreen
+  },
+  moneyRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between"
   },
   groupStatus: {
     color: colors.mutedText,
@@ -538,6 +724,57 @@ const styles = StyleSheet.create({
     color: colors.deepGreen,
     fontSize: 15,
     fontWeight: "900"
+  },
+  chooserBackdrop: {
+    backgroundColor: "rgba(15, 61, 48, 0.5)",
+    flex: 1,
+    justifyContent: "flex-end"
+  },
+  chooserCard: {
+    backgroundColor: colors.cream,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    gap: 10,
+    padding: 24,
+    paddingBottom: 40
+  },
+  chooserTitle: {
+    color: colors.darkText,
+    fontSize: 22,
+    fontWeight: "900"
+  },
+  chooserCopy: {
+    color: colors.mutedText,
+    fontSize: 14,
+    fontWeight: "600",
+    lineHeight: 20,
+    marginBottom: 6
+  },
+  chooserOption: {
+    alignItems: "center",
+    backgroundColor: colors.card,
+    borderColor: colors.line,
+    borderRadius: 18,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 12,
+    padding: 16,
+    ...shadow
+  },
+  chooserOptionText: {
+    color: colors.darkText,
+    fontSize: 16,
+    fontWeight: "900"
+  },
+  chooserCancel: {
+    alignItems: "center",
+    marginTop: 4,
+    padding: 12
+  },
+  chooserCancelText: {
+    color: colors.mutedText,
+    fontSize: 15,
+    fontWeight: "800"
   },
   scanBackdrop: {
     alignItems: "center",

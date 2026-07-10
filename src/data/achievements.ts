@@ -7,5 +7,6 @@ export const achievementDefs: Achievement[] = [
   { id: "budget_reflector", title: "Budget Reflector", description: "Log your budget for the first time.", icon: "pie-chart", metric: "budgetsLogged", goal: 1 },
   { id: "quiz_ace", title: "Quiz Ace", description: "Pass three knowledge checks.", icon: "school", metric: "quizzesPassed", goal: 3 },
   { id: "first_investor", title: "First Investor", description: "Plant your first investment flower.", icon: "trending-up", metric: "investmentsPlanted", goal: 1 },
+  { id: "first_receipt", title: "First Receipt Sprout!", description: "Scan your first receipt to grow a budget plant.", icon: "receipt", metric: "receiptsScanned", goal: 1 },
   { id: "hundred_planted", title: "100 Planted", description: "Grow one hundred flowers in your garden.", icon: "trophy", metric: "totalFlowers", goal: 100 }
 ];

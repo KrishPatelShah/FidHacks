@@ -8,14 +8,20 @@ type Props = PressableProps & {
 };
 
 export const PrimaryButton = forwardRef<ComponentRef<typeof View>, Props>(
-  ({ label, variant = "primary", style, ...rest }, ref) => {
+  ({ label, variant = "primary", style, disabled, ...rest }, ref) => {
     return (
       <Pressable
         ref={ref}
+        disabled={disabled}
         {...rest}
-        style={({ pressed }) => [styles.button, variant === "secondary" && styles.secondary, pressed && styles.pressed]}
+        style={({ pressed }) => [
+          styles.button,
+          variant === "secondary" && styles.secondary,
+          disabled && styles.disabled,
+          pressed && !disabled && styles.pressed
+        ]}
       >
-        <Text style={[styles.label, variant === "secondary" && styles.secondaryLabel]}>{label}</Text>
+        <Text style={[styles.label, variant === "secondary" && styles.secondaryLabel, disabled && styles.disabledLabel]}>{label}</Text>
       </Pressable>
     );
   }
@@ -44,6 +50,11 @@ const styles = StyleSheet.create({
     opacity: 0.85,
     transform: [{ scale: 0.99 }]
   },
+  disabled: {
+    backgroundColor: "#C9D8D1",
+    opacity: 0.9,
+    shadowOpacity: 0
+  },
   label: {
     color: colors.white,
     fontSize: 16,
@@ -51,5 +62,8 @@ const styles = StyleSheet.create({
   },
   secondaryLabel: {
     color: colors.deepGreen
+  },
+  disabledLabel: {
+    color: "#F7FBF9"
   }
 });

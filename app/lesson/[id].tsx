@@ -1,40 +1,64 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { BackButton } from "@/components/BackButton";
 import { FlowerIcon } from "@/components/FlowerIcon";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { Term } from "@/components/Term";
-import { findLesson } from "@/data/lessons";
+import { completeLesson, getLesson } from "@/services/api";
 import { useGarden } from "@/state/garden";
 import { colors, shadow } from "@/theme/colors";
+import { Lesson } from "@/types/domain";
 
 export default function LessonScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { completeLesson } = useGarden();
-  const [completed, setCompleted] = useState(false);
-  const lesson = findLesson(id);
+  const { refreshAccount } = useGarden();
+  const [lesson, setLesson] = useState<Lesson | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  function handleTakeQuiz() {
-    if (lesson && !completed) {
-      completeLesson(lesson.category);
-      setCompleted(true);
-    }
+  useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+    getLesson(id)
+      .then(setLesson)
+      .catch((cause) => setError(cause instanceof Error ? cause.message : "Could not load this lesson."))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  async function handleTakeQuiz() {
     if (lesson) {
+      try {
+        await completeLesson(lesson.id);
+        await refreshAccount();
+        setError(null);
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : "Could not record your lesson progress.");
+        return;
+      }
       router.push(`/quiz/${lesson.id}`);
     }
+  }
+
+  if (loading) {
+    return <View style={styles.screen}><Text style={styles.title}>Loading lesson...</Text></View>;
   }
 
   if (!lesson) {
     return (
       <View style={styles.screen}>
+        <BackButton />
         <Text style={styles.title}>Lesson not found</Text>
+        {error ? <Text style={styles.copy}>{error}</Text> : null}
       </View>
     );
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.screen}>
+    <View style={styles.root}>
+      <BackButton />
+      <ScrollView contentContainerStyle={styles.screen}>
       <View style={styles.hero}>
         <View style={styles.iconWrap}>
           <FlowerIcon name={lesson.category === "credit_debt" ? "Rose" : "Daisy"} size={64} />
@@ -70,17 +94,22 @@ export default function LessonScreen() {
       <View style={styles.rewardCard}>
         <Ionicons color={colors.sunflowerYellow} name="sparkles" size={22} />
         <View style={styles.rewardText}>
-          <Text style={styles.rewardTitle}>{completed ? "Lesson complete: +Sunlight earned" : "Complete lesson = sunlight"}</Text>
-          <Text style={styles.rewardCopy}>Pass the quiz next to earn water and grow this flower category.</Text>
+          <Text style={styles.rewardTitle}>Pass the knowledge check to grow your garden</Text>
+          <Text style={styles.rewardCopy}>Your FastAPI garden records rewards only after a passed quiz.</Text>
         </View>
       </View>
 
       <PrimaryButton label="Take Quiz" onPress={handleTakeQuiz} />
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    backgroundColor: colors.cream,
+    flex: 1
+  },
   screen: {
     backgroundColor: colors.cream,
     gap: 16,

@@ -1,71 +1,225 @@
 import { Link } from "expo-router";
+import { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { learningModules } from "@/data/lessons";
+import { FlowerIcon } from "@/components/FlowerIcon";
+import { getLearningModules } from "@/services/api";
+import { LearningModule } from "@/types/domain";
+import { colors, shadow } from "@/theme/colors";
+
+const moduleDetails: Record<string, { topics: string; progress: number; completed: string; reward: string; difficulty: string; flower: string; accent: string }> = {
+  budgeting: {
+    topics: "Budgeting, expected vs. actual spending, spending habits",
+    progress: 0.6,
+    completed: "3 of 5 lessons",
+    reward: "Unlock 1 Daisy",
+    difficulty: "Beginner",
+    flower: "Daisy",
+    accent: colors.sunflowerYellow
+  },
+  savings: {
+    topics: "Saving money, emergency funds, savings goals",
+    progress: 0.25,
+    completed: "1 of 4 lessons",
+    reward: "Earn water",
+    difficulty: "Beginner",
+    flower: "Marigold",
+    accent: colors.softOrange
+  },
+  credit_debt: {
+    topics: "Credit cards, credit scores, APR, interest, debt repayment",
+    progress: 0.4,
+    completed: "2 of 5 lessons",
+    reward: "Grow your Rose",
+    difficulty: "Beginner",
+    flower: "Rose",
+    accent: colors.roseRed
+  },
+  retirement: {
+    topics: "Roth IRA, 401(k), employer match, long-term saving",
+    progress: 0.15,
+    completed: "1 of 5 lessons",
+    reward: "Earn sunlight",
+    difficulty: "Intermediate",
+    flower: "Orchid",
+    accent: colors.orchidPurple
+  },
+  career_taxes: {
+    topics: "Paychecks, taxes, benefits, take-home pay",
+    progress: 0.2,
+    completed: "1 of 5 lessons",
+    reward: "Unlock Blue Iris",
+    difficulty: "Intermediate",
+    flower: "Blue Iris",
+    accent: colors.skyBlue
+  },
+  funds: {
+    topics: "Savings accounts, bonds, index funds, mutual funds, stocks",
+    progress: 0.1,
+    completed: "1 of 6 lessons",
+    reward: "Unlock investment flowers",
+    difficulty: "Advanced",
+    flower: "Purple Tulip",
+    accent: colors.orchidPurple
+  }
+};
 
 export default function LearningPathScreen() {
+  const [modules, setModules] = useState<LearningModule[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getLearningModules()
+      .then(setModules)
+      .catch((cause) => setError(cause instanceof Error ? cause.message : "Could not load lessons."))
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
     <ScrollView contentContainerStyle={styles.screen}>
-      <Text style={styles.title}>Learning Path</Text>
-      {learningModules.map((module) => (
-        <View key={module.id} style={styles.module}>
-          <Text style={styles.flower}>{module.flowerName}</Text>
-          <Text style={styles.moduleTitle}>{module.title}</Text>
-          {module.lessons.map((lesson) => (
-            <Link key={lesson.id} href={`/lesson/${lesson.id}`} asChild>
-              <TouchableOpacity style={styles.lesson}>
-                <Text style={styles.lessonTitle}>{lesson.title}</Text>
-                <Text style={styles.lessonMeta}>{lesson.difficulty} · {lesson.contentType} · +{lesson.reward.sunlight ?? 0} sunlight</Text>
-              </TouchableOpacity>
-            </Link>
-          ))}
-        </View>
-      ))}
+      <View style={styles.header}>
+        <Text style={styles.title}>Grow Your Money Knowledge</Text>
+        <Text style={styles.subtitle}>Complete lessons to unlock new flowers.</Text>
+      </View>
+
+      {loading ? <Text style={styles.status}>Loading learning path...</Text> : null}
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+
+      {modules.map((module) => {
+        const detail = moduleDetails[module.category] ?? moduleDetails.budgeting;
+        const firstLesson = module.lessons[0];
+
+        if (!firstLesson) return null;
+
+        return (
+          <Link key={module.id} href={`/lesson/${firstLesson.id}`} asChild>
+            <TouchableOpacity style={styles.module}>
+              <View style={[styles.iconWrap, { backgroundColor: `${detail.accent}33` }]}>
+                <FlowerIcon name={detail.flower} size={54} />
+              </View>
+              <View style={styles.moduleBody}>
+                <View style={styles.moduleHeader}>
+                  <Text style={styles.moduleTitle}>{module.flowerName} — {module.title}</Text>
+                  <Text style={[styles.badge, { color: detail.accent }]}>{detail.difficulty}</Text>
+                </View>
+                <Text style={styles.topics}>{detail.topics}</Text>
+                <View style={styles.progressTrack}>
+                  <View style={[styles.progressFill, { width: `${detail.progress * 100}%`, backgroundColor: detail.accent }]} />
+                </View>
+                <View style={styles.metaRow}>
+                  <Text style={styles.meta}>{detail.completed}</Text>
+                  <Text style={styles.reward}>{detail.reward}</Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          </Link>
+        );
+      })}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   screen: {
-    backgroundColor: "#fffaf0",
+    backgroundColor: colors.cream,
     gap: 16,
     padding: 20,
+    paddingBottom: 110,
     paddingTop: 64
   },
+  header: {
+    gap: 8,
+    marginBottom: 4
+  },
   title: {
-    color: "#234330",
-    fontSize: 32,
-    fontWeight: "900"
+    color: colors.darkText,
+    fontSize: 34,
+    fontWeight: "900",
+    letterSpacing: -0.6,
+    lineHeight: 39
+  },
+  subtitle: {
+    color: colors.mutedText,
+    fontSize: 16,
+    lineHeight: 23
+  },
+  status: {
+    color: colors.mutedText,
+    fontSize: 15
+  },
+  error: {
+    color: "#B42318",
+    fontSize: 14,
+    lineHeight: 20
   },
   module: {
-    backgroundColor: "#ffffff",
-    borderRadius: 24,
-    gap: 10,
-    padding: 18
+    backgroundColor: colors.card,
+    borderRadius: 28,
+    flexDirection: "row",
+    gap: 14,
+    padding: 16,
+    ...shadow
   },
-  flower: {
-    color: "#a56620",
-    fontSize: 13,
-    fontWeight: "900",
-    textTransform: "uppercase"
+  iconWrap: {
+    alignItems: "center",
+    borderRadius: 24,
+    height: 70,
+    justifyContent: "center",
+    width: 70
+  },
+  moduleBody: {
+    flex: 1,
+    gap: 9
+  },
+  moduleHeader: {
+    gap: 6
   },
   moduleTitle: {
-    color: "#234330",
-    fontSize: 21,
-    fontWeight: "900"
+    color: colors.darkText,
+    fontSize: 18,
+    fontWeight: "900",
+    lineHeight: 23
   },
-  lesson: {
-    backgroundColor: "#f7efd9",
-    borderRadius: 16,
-    padding: 14
+  badge: {
+    alignSelf: "flex-start",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 999,
+    fontSize: 11,
+    fontWeight: "900",
+    overflow: "hidden",
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    textTransform: "uppercase"
   },
-  lessonTitle: {
-    color: "#234330",
-    fontSize: 16,
+  topics: {
+    color: colors.mutedText,
+    fontSize: 13,
+    lineHeight: 19
+  },
+  progressTrack: {
+    backgroundColor: "#EADCC0",
+    borderRadius: 999,
+    height: 9,
+    overflow: "hidden"
+  },
+  progressFill: {
+    borderRadius: 999,
+    height: "100%"
+  },
+  metaRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    justifyContent: "space-between"
+  },
+  meta: {
+    color: colors.mutedText,
+    fontSize: 12,
     fontWeight: "800"
   },
-  lessonMeta: {
-    color: "#65735f",
-    marginTop: 4,
-    textTransform: "capitalize"
+  reward: {
+    color: colors.deepGreen,
+    fontSize: 12,
+    fontWeight: "900"
   }
 });

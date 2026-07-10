@@ -1,6 +1,6 @@
 # Financial Garden Backend
 
-This backend replaces direct Supabase access with a FastAPI service backed by PostgreSQL.
+This backend is a FastAPI service backed by PostgreSQL.
 
 ## Local Services
 

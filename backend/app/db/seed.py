@@ -25,6 +25,7 @@ MODULES = [
                 "slug": "budgeting-expected-actual",
                 "category": "budgeting",
                 "title": "Expected vs. Actual Spending",
+                "sort_order": 1,
                 "difficulty": "beginner",
                 "content_type": "reading",
                 "source_url": None,
@@ -54,6 +55,7 @@ MODULES = [
                 "slug": "budgeting-categories",
                 "category": "budgeting",
                 "title": "Common Spending Categories",
+                "sort_order": 2,
                 "difficulty": "beginner",
                 "content_type": "reading",
                 "source_url": None,
@@ -76,12 +78,22 @@ MODULES = [
                 "slug": "savings-emergency-fund",
                 "category": "savings",
                 "title": "Why Emergency Funds Matter",
+                "sort_order": 1,
                 "difficulty": "beginner",
                 "content_type": "reading",
                 "source_url": None,
                 "summary": "Understand how emergency savings can reduce stress when unexpected expenses happen.",
                 "reward": {"sunlight": 1, "water": 1},
-                "questions": [],
+                "questions": [
+                    {
+                        "id": UUID("40000000-0000-0000-0000-000000000003"),
+                        "slug": "savings-emergency-fund-q1",
+                        "prompt": "What is an emergency fund for?",
+                        "options": ["Expected and unexpected essential expenses", "Only investing", "Increasing credit limits"],
+                        "correct_index": 0,
+                        "explanation": "Emergency savings help absorb essential expenses without relying on debt.",
+                    }
+                ],
             }
         ],
     },
@@ -98,12 +110,86 @@ MODULES = [
                 "slug": "credit-apr",
                 "category": "credit_debt",
                 "title": "What Is APR?",
+                "sort_order": 1,
                 "difficulty": "beginner",
                 "content_type": "reading",
                 "source_url": None,
                 "summary": "APR is the yearly cost of borrowing money. Learn how it affects credit card balances.",
                 "reward": {"sunlight": 1, "water": 1},
-                "questions": [],
+                "questions": [
+                    {
+                        "id": UUID("40000000-0000-0000-0000-000000000004"),
+                        "slug": "credit-apr-q1",
+                        "prompt": "What does APR describe?",
+                        "options": ["The yearly cost of borrowing", "A bank account balance", "A credit score"],
+                        "correct_index": 0,
+                        "explanation": "APR communicates the annualized cost of borrowing money.",
+                    }
+                ],
+            }
+        ],
+    },
+    {
+        "id": UUID("20000000-0000-0000-0000-000000000004"),
+        "slug": "module_retirement",
+        "category": "retirement",
+        "flower_name": "Orchid",
+        "title": "Retirement Basics",
+        "sort_order": 4,
+        "lessons": [
+            {
+                "id": UUID("30000000-0000-0000-0000-000000000005"),
+                "slug": "retirement-match",
+                "category": "retirement",
+                "title": "Retirement Account Basics",
+                "sort_order": 1,
+                "difficulty": "beginner",
+                "content_type": "reading",
+                "source_url": None,
+                "summary": "Learn why retirement accounts are designed for long-term saving and investing.",
+                "reward": {"sunlight": 1, "water": 1},
+                "questions": [
+                    {
+                        "id": UUID("40000000-0000-0000-0000-000000000005"),
+                        "slug": "retirement-account-basics-q1",
+                        "prompt": "What is the usual purpose of a retirement account?",
+                        "options": ["Long-term retirement saving", "Daily spending", "Avoiding every tax"],
+                        "correct_index": 0,
+                        "explanation": "These accounts support long-term retirement saving goals.",
+                    }
+                ],
+            }
+        ],
+    },
+    {
+        "id": UUID("20000000-0000-0000-0000-000000000005"),
+        "slug": "module_investing",
+        "category": "funds",
+        "flower_name": "Purple Tulip",
+        "title": "Investing Foundations",
+        "sort_order": 5,
+        "lessons": [
+            {
+                "id": UUID("30000000-0000-0000-0000-000000000006"),
+                "slug": "investing-risk-return",
+                "category": "funds",
+                "title": "Why Diversification Matters",
+                "sort_order": 1,
+                "difficulty": "beginner",
+                "content_type": "reading",
+                "source_url": None,
+                "summary": "Diversification spreads investment exposure instead of relying on one holding.",
+                "reward": {"sunlight": 1, "fertilizer": 1},
+                "questions": [
+                    {
+                        "id": UUID("40000000-0000-0000-0000-000000000006"),
+                        "slug": "investing-risk-return-q1",
+                        "prompt": "What does diversification aim to do?",
+                        "options": ["Spread investment exposure", "Guarantee returns", "Remove all risk"],
+                        "correct_index": 0,
+                        "explanation": "It can reduce concentration risk, but cannot remove all investment risk.",
+                    }
+                ],
             }
         ],
     },
@@ -145,6 +231,30 @@ PLANTS = [
         "sunlight": 1,
         "fertilizer": 0,
         "unlocked": True,
+    },
+    {
+        "id": UUID("10000000-0000-0000-0000-000000000004"),
+        "type": "retirement",
+        "flower_name": "Orchid",
+        "stage": 1,
+        "growth": 0,
+        "quantity": 1,
+        "water": 0,
+        "sunlight": 0,
+        "fertilizer": 0,
+        "unlocked": False,
+    },
+    {
+        "id": UUID("10000000-0000-0000-0000-000000000005"),
+        "type": "funds",
+        "flower_name": "Purple Tulip",
+        "stage": 1,
+        "growth": 0,
+        "quantity": 1,
+        "water": 0,
+        "sunlight": 0,
+        "fertilizer": 0,
+        "unlocked": False,
     },
 ]
 

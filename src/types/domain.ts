@@ -34,23 +34,6 @@ export type UserProfile = {
   gardenVisibility: "private" | "friends" | "public";
 };
 
-export type BudgetCategory =
-  | "savings_investments"
-  | "living_expenses"
-  | "education_career"
-  | "lifestyle"
-  | "debt"
-  | "taxes";
-
-export type BudgetEntry = {
-  id: string;
-  userId: string;
-  category: BudgetCategory;
-  expectedAmount: number;
-  actualAmount: number;
-  month: string;
-};
-
 export type Lesson = {
   id: string;
   category: PlantCategory;
@@ -72,4 +55,52 @@ export type LearningModule = {
   flowerName: string;
   title: string;
   lessons: Lesson[];
+};
+
+export type SpendCategory = "needs" | "wants" | "save" | "income";
+
+export type TransactionSource = "scanned" | "manual";
+
+export type Transaction = {
+  id: string;
+  merchant: string;
+  amount: number;
+  category: SpendCategory;
+  source: TransactionSource;
+  date: string;
+  note?: string;
+};
+
+export type RiskProfile = "Conservative" | "Moderate" | "Aggressive";
+
+export type Etf = {
+  symbol: string;
+  name: string;
+  category: PlantCategory;
+  flowerName: string;
+  price: number;
+  changePct: number;
+  spark: number[];
+  riskLabel: string;
+  fitsProfiles: RiskProfile[];
+  why: string;
+  info: string;
+};
+
+export type AchievementMetric =
+  | "flowersGrown"
+  | "streak"
+  | "totalFlowers"
+  | "budgetsLogged"
+  | "quizzesPassed"
+  | "lessonsCompleted"
+  | "investmentsPlanted";
+
+export type Achievement = {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  metric: AchievementMetric;
+  goal: number;
 };

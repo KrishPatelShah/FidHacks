@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { colors, shadow } from "@/theme/colors";
 
 export function Term({ label, definition }: { label: string; definition: string }) {
   const [visible, setVisible] = useState(false);
@@ -23,30 +24,31 @@ export function Term({ label, definition }: { label: string; definition: string 
 
 const styles = StyleSheet.create({
   term: {
-    color: "#1f6f8b",
+    color: colors.deepGreen,
     fontWeight: "900",
     textDecorationLine: "underline"
   },
   backdrop: {
     alignItems: "center",
-    backgroundColor: "rgba(35, 67, 48, 0.35)",
+    backgroundColor: "rgba(15, 110, 86, 0.28)",
     flex: 1,
     justifyContent: "center",
     padding: 28
   },
   tooltip: {
-    backgroundColor: "#fffaf0",
-    borderRadius: 22,
+    backgroundColor: colors.card,
+    borderRadius: 24,
     gap: 8,
-    padding: 20
+    padding: 20,
+    ...shadow
   },
   label: {
-    color: "#234330",
+    color: colors.darkText,
     fontSize: 20,
     fontWeight: "900"
   },
   definition: {
-    color: "#65735f",
+    color: colors.mutedText,
     fontSize: 16,
     lineHeight: 23
   }

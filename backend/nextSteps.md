@@ -15,14 +15,11 @@ Referenced in the README and Docker startup flow, but the file is missing.
 `auth.py`'s `/demo` endpoint returns a static hardcoded UUID token, but nothing validates `Authorization: Bearer demo:<uuid>` on other routes — there's no `app/api/deps.py` dependency to extract/verify the user. Every route is effectively single-user.
 
 **5. Sunflower AI isn't wired to Gemini**
-`app/services/sunflower.py` is just keyword matching (checks for "apr", "roth", etc.) — it duplicates the frontend's `src/services/ai.ts` stub instead of calling an LLM. Only the Supabase Edge Function (`supabase/functions/sunflower-chat/index.ts`) actually calls Gemini.
+`app/services/sunflower.py` is just keyword matching (checks for "apr", "roth", etc.) — it duplicates the frontend's `src/services/ai.ts` stub instead of calling an LLM. Wire it to a backend provider when AI responses are ready.
 
-**6. `supabase_client.py` is unused**
-It exists but nothing imports it — unclear if you intend the FastAPI backend to proxy through Supabase or own Postgres directly.
+**6. `backend/tests/` is empty** despite `pytest` in requirements.
 
-**7. `backend/tests/` is empty** despite `pytest` in requirements.
-
-**8. Frontend isn't calling the FastAPI backend at all** — no HTTP client pointed at `localhost:8000/api/*` exists yet in the Expo app.
+**7. Frontend isn't calling the FastAPI backend at all** — no HTTP client pointed at `localhost:8000/api/*` exists yet in the Expo app.
 
 ## Suggested Order of Attack
 

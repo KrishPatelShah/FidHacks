@@ -1,42 +1,55 @@
-import { ReactNode } from "react";
-import { Pressable, StyleSheet, Text } from "react-native";
+import { ComponentRef, forwardRef, ReactNode } from "react";
+import { Pressable, PressableProps, StyleSheet, Text, View } from "react-native";
+import { colors, shadow } from "@/theme/colors";
 
-type Props = {
+type Props = PressableProps & {
   label: string;
-  onPress?: () => void;
   variant?: "primary" | "secondary";
 };
 
-export function PrimaryButton({ label, onPress, variant = "primary" }: Props) {
-  return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.button, variant === "secondary" && styles.secondary, pressed && styles.pressed]}>
-      <Text style={[styles.label, variant === "secondary" && styles.secondaryLabel]}>{label}</Text>
-    </Pressable>
-  );
-}
+export const PrimaryButton = forwardRef<ComponentRef<typeof View>, Props>(
+  ({ label, variant = "primary", style, ...rest }, ref) => {
+    return (
+      <Pressable
+        ref={ref}
+        {...rest}
+        style={({ pressed }) => [styles.button, variant === "secondary" && styles.secondary, pressed && styles.pressed]}
+      >
+        <Text style={[styles.label, variant === "secondary" && styles.secondaryLabel]}>{label}</Text>
+      </Pressable>
+    );
+  }
+);
+
+PrimaryButton.displayName = "PrimaryButton";
 
 export type ButtonChildProps = Props & { children?: ReactNode };
 
 const styles = StyleSheet.create({
   button: {
     alignItems: "center",
-    backgroundColor: "#234330",
-    borderRadius: 18,
-    padding: 16
+    backgroundColor: colors.deepGreen,
+    borderRadius: 22,
+    padding: 16,
+    ...shadow
   },
   secondary: {
-    backgroundColor: "#e4f0dc"
+    backgroundColor: colors.card,
+    borderColor: colors.line,
+    borderWidth: 1,
+    shadowOpacity: 0.06,
+    elevation: 2
   },
   pressed: {
     opacity: 0.85,
     transform: [{ scale: 0.99 }]
   },
   label: {
-    color: "#ffffff",
+    color: colors.white,
     fontSize: 16,
     fontWeight: "900"
   },
   secondaryLabel: {
-    color: "#234330"
+    color: colors.deepGreen
   }
 });

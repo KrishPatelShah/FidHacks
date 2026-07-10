@@ -174,6 +174,20 @@ export async function demoLogin() {
   }
 }
 
+// Wipe the signed-in user's server-side progress (plants, quiz attempts,
+// lesson progress, budget entries). Returns true when there is nothing left on
+// the server that could repopulate the garden — i.e. the reset succeeded or the
+// user was never signed in. Returns false when the server still holds old data.
+export async function resetRemoteGarden(): Promise<boolean> {
+  if (!(await getAccessToken())) return true;
+  try {
+    await request("/api/profile/reset", { method: "POST" }, true);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function getBootstrap(): Promise<Bootstrap> {
   const result = await request<{
     profile: ApiProfile;

@@ -2,6 +2,7 @@ import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { BackButton } from "@/components/BackButton";
+import { Logo } from "@/components/Logo";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { ProgressBar } from "@/components/ProgressBar";
 import {
@@ -89,6 +90,7 @@ export default function QuestionnaireScreen() {
     <View style={styles.root}>
       <BackButton />
       <ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled">
+        <Logo height={72} style={styles.logo} />
         <Text style={styles.title}>{assessmentTitle}</Text>
         <Text style={styles.copy}>{assessmentSubtitle}</Text>
 
@@ -157,6 +159,9 @@ const styles = StyleSheet.create({
     padding: 24,
     paddingBottom: 48,
     paddingTop: 72
+  },
+  logo: {
+    alignSelf: "center"
   },
   eyebrow: {
     color: colors.deepGreen,

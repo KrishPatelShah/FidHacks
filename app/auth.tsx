@@ -2,6 +2,7 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { BackButton } from "@/components/BackButton";
+import { Logo } from "@/components/Logo";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { colors } from "@/theme/colors";
 import { useGarden } from "@/state/garden";
@@ -23,6 +24,7 @@ export default function AuthScreen() {
   return (
     <View style={styles.screen}>
       <BackButton />
+      <Logo height={96} style={styles.logo} />
       <Text style={styles.title}>Save your garden</Text>
       <Text style={styles.copy}>Continue with the demo account to save your progress securely in your garden.</Text>
       {error || accountError ? <Text style={styles.error}>{error ?? accountError}</Text> : null}
@@ -38,6 +40,10 @@ const styles = StyleSheet.create({
     gap: 16,
     justifyContent: "center",
     padding: 24
+  },
+  logo: {
+    alignSelf: "center",
+    marginBottom: 4
   },
   title: {
     color: colors.darkText,

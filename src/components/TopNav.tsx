@@ -1,38 +1,46 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Link, router, usePathname } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { router, usePathname } from "expo-router";
+import { Pressable, StyleSheet, View } from "react-native";
+import { Logo } from "@/components/Logo";
 import { colors, shadow } from "@/theme/colors";
 
 type Props = {
   showProfile?: boolean;
 };
 
-// Shared header row for the tab screens: a back arrow on the left (only when
-// there is somewhere to go back to) and a profile avatar on the right.
+// Shared header row: the logo on the left (with a back arrow beside it when there
+// is somewhere to go back to) and a profile avatar on the right.
 export function TopNav({ showProfile = true }: Props) {
   usePathname(); // re-render on route change so canGoBack stays current
   const canBack = router.canGoBack();
 
   return (
     <View style={styles.nav}>
-      {canBack ? (
-        <Pressable
-          accessibilityLabel="Go back"
-          accessibilityRole="button"
-          hitSlop={8}
-          onPress={() => router.back()}
-          style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
-        >
-          <Ionicons color={colors.darkText} name="chevron-back" size={22} />
-        </Pressable>
-      ) : (
-        <View style={styles.placeholder} />
-      )}
+      <View style={styles.left}>
+        <Logo height={40} />
+        {canBack ? (
+          <Pressable
+            accessibilityLabel="Go back"
+            accessibilityRole="button"
+            hitSlop={8}
+            onPress={() => router.back()}
+            style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
+          >
+            <Ionicons color={colors.darkText} name="chevron-back" size={22} />
+          </Pressable>
+        ) : null}
+      </View>
 
       {showProfile ? (
-        <Link accessibilityLabel="Open profile" accessibilityRole="button" href="/(tabs)/profile" style={styles.avatar}>
-          <Text style={styles.avatarText}>DG</Text>
-        </Link>
+        <Pressable
+          accessibilityLabel="Open profile"
+          accessibilityRole="button"
+          hitSlop={8}
+          onPress={() => router.push("/(tabs)/profile")}
+          style={({ pressed }) => [styles.avatar, pressed && styles.pressed]}
+        >
+          <Ionicons color={colors.white} name="person" size={22} />
+        </Pressable>
       ) : (
         <View style={styles.placeholder} />
       )}
@@ -46,6 +54,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between"
   },
+  left: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 10
+  },
   iconButton: {
     alignItems: "center",
     backgroundColor: colors.card,
@@ -58,19 +71,12 @@ const styles = StyleSheet.create({
     ...shadow
   },
   avatar: {
+    alignItems: "center",
     backgroundColor: colors.deepGreen,
     borderRadius: 999,
     height: 40,
-    overflow: "hidden",
-    textAlign: "center",
+    justifyContent: "center",
     width: 40
-  },
-  avatarText: {
-    color: colors.white,
-    fontSize: 14,
-    fontWeight: "900",
-    lineHeight: 40,
-    textAlign: "center"
   },
   placeholder: {
     height: 40,

@@ -193,7 +193,7 @@ export default function BudgetScreen() {
       <TopNav />
       <View style={styles.header}>
         <Text style={styles.eyebrow}>Financial Garden</Text>
-        <Text style={styles.title}>Your money habits are blooming.</Text>
+        <Text style={styles.title}>Your budget is in bluuum.</Text>
       </View>
 
       {hasData ? (

@@ -1,5 +1,6 @@
-import { Link } from "expo-router";
-import { StyleSheet, Text } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { Pressable, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, shadow } from "@/theme/colors";
 
@@ -9,35 +10,33 @@ export function ProfileButton() {
   const insets = useSafeAreaInsets();
 
   return (
-    <Link
+    <Pressable
       accessibilityLabel="Open profile"
       accessibilityRole="button"
-      href="/(tabs)/profile"
-      style={[styles.button, { top: insets.top + 8 }]}
+      hitSlop={10}
+      onPress={() => router.push("/(tabs)/profile")}
+      style={({ pressed }) => [styles.button, { top: insets.top + 8 }, pressed && styles.pressed]}
     >
-      <Text style={styles.text}>DG</Text>
-    </Link>
+      <Ionicons color={colors.white} name="person" size={22} />
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   button: {
+    alignItems: "center",
     backgroundColor: colors.deepGreen,
     borderRadius: 999,
     height: 40,
-    overflow: "hidden",
+    justifyContent: "center",
     position: "absolute",
     right: 16,
-    textAlign: "center",
     width: 40,
     zIndex: 20,
     ...shadow
   },
-  text: {
-    color: colors.white,
-    fontSize: 14,
-    fontWeight: "900",
-    lineHeight: 40,
-    textAlign: "center"
+  pressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.96 }]
   }
 });

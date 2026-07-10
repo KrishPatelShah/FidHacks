@@ -57,7 +57,7 @@ export default function LearningPathScreen() {
     <ScrollView contentContainerStyle={styles.screen}>
       <TopNav />
       <View style={styles.header}>
-        <Text style={styles.title}>Grow Your Money Knowledge</Text>
+        <Text style={styles.title}>Every lesson helps you bluuum.</Text>
         <Text style={styles.subtitle}>Pick a module to see its lessons and grow new flowers.</Text>
       </View>
 

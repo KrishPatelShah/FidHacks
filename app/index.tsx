@@ -1,16 +1,16 @@
 import { Link } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
+import { Logo } from "@/components/Logo";
 import { PrimaryButton } from "@/components/PrimaryButton";
-import { SunflowerCompanion } from "@/components/SunflowerCompanion";
 import { colors } from "@/theme/colors";
 
 export default function WelcomeScreen() {
   return (
     <View style={styles.screen}>
       <View style={styles.hero}>
-        <SunflowerCompanion size={124} />
-        <Text style={styles.name}>Flourish</Text>
-        <Text style={styles.tagline}>Grow your money knowledge one habit at a time.</Text>
+        <Logo height={150} />
+        <Text style={styles.name}>Fluuurish</Text>
+        <Text style={styles.tagline}>Where financial confidence bluuums.</Text>
       </View>
       <View style={styles.actions}>
         <Link href="/auth" asChild>

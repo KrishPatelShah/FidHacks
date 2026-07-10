@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-nati
 import { GardenPreview } from "@/components/GardenPreview";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { ResourcePill } from "@/components/ResourcePill";
+import { TopNav } from "@/components/TopNav";
 import { useGarden } from "@/state/garden";
 import { colors, shadow } from "@/theme/colors";
 import { ExperienceLevel } from "@/types/domain";
@@ -54,25 +55,21 @@ export default function GardenDashboardScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.screen}>
+      <TopNav />
       <View style={styles.topBar}>
         <View style={styles.streak}>
           <Ionicons color={colors.softOrange} name="leaf" size={18} />
           <Text style={styles.streakText}>{streak} Day Streak</Text>
         </View>
-        <View style={styles.profileRow}>
-          <View style={styles.levelBadge}>
-            <Ionicons color={colors.deepGreen} name="ribbon" size={14} />
-            <Text style={styles.levelText}>{levelLabel}</Text>
-          </View>
-          <Link href="/(tabs)/profile" style={styles.avatar}>
-            <Text style={styles.avatarText}>DG</Text>
-          </Link>
+        <View style={styles.levelBadge}>
+          <Ionicons color={colors.deepGreen} name="ribbon" size={14} />
+          <Text style={styles.levelText}>{levelLabel}</Text>
         </View>
       </View>
 
       <View style={styles.header}>
-        <Text style={styles.eyebrow}>Flourish</Text>
-        <Text style={styles.title}>Your money habits are blooming.</Text>
+        <Text style={styles.eyebrow}>Fluuurish</Text>
+        <Text style={styles.title}>Your money habits are bluuuming.</Text>
       </View>
 
       <GardenPreview plants={plants} />

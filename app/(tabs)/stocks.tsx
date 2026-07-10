@@ -6,12 +6,22 @@ import { Text } from "@/components/AppText";
 import { FlowerIcon } from "@/components/FlowerIcon";
 import { Sparkline } from "@/components/Sparkline";
 import { TopNav } from "@/components/TopNav";
-import { etfs, riskProfileCopy, timeRanges, TimeRange } from "@/data/investments";
+import { riskProfileCopy, timeRanges, topics, TimeRange } from "@/data/investments";
 import { canAccessCategory, investingUnlocked } from "@/lib/levels";
-import { fetchSeries, marketDataConfigured } from "@/services/marketData";
+import { fetchDailySeries, marketDataConfigured } from "@/services/marketData";
 import { useGarden } from "@/state/garden";
 import { colors, shadow } from "@/theme/colors";
-import { Etf } from "@/types/domain";
+import { InvestTopic } from "@/types/domain";
+
+// How many trailing daily closes each range chip shows. One daily series is
+// fetched per topic and sliced by these counts, so each range renders a
+// different window of the same live data without another API request.
+const RANGE_POINTS: Record<TimeRange, number> = {
+  "1D": 2,
+  "1W": 6,
+  "1M": 22,
+  "3M": 66
+};
 
 const ladder = [
   { flower: "White Lily", label: "Savings / Cash", risk: "Lowest risk" },
@@ -21,49 +31,49 @@ const ladder = [
 ];
 
 export default function StocksScreen() {
-  const { riskProfile, plantInvestment, plants, experienceLevel, investmentsPlanted } = useGarden();
+  const { riskProfile, plantInvestment, experienceLevel, investmentsPlanted } = useGarden();
   const [range, setRange] = useState<TimeRange>("1M");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [planted, setPlanted] = useState<Record<string, boolean>>({});
   const [plantNote, setPlantNote] = useState<string | null>(null);
 
-  // Live historical series per range, cached so each range is fetched at most
-  // once (the free API tier is rate-limited — refetching on every tap would trip
-  // it). Price, change, and the graph are all derived from this one dataset, so
-  // they always agree and always move together when the range changes. When a
-  // fetch fails (no key, rate limit, offline) the cache stays empty for that
-  // range and the screen renders the static mock values instead.
-  const [seriesByRange, setSeriesByRange] = useState<Partial<Record<TimeRange, Record<string, number[]>>>>({});
-  const [loading, setLoading] = useState(false);
+  // One daily price series per topic, fetched lazily the first time its card is
+  // expanded and cached by topic id. Every range chip slices this same dataset
+  // locally, so switching 1D/1W/1M/3M never triggers another request — that
+  // avoids the free tier's per-minute rate limit (429s) and keeps the graphs
+  // updating accurately and instantly. When a fetch fails (no key, rate limit,
+  // offline) the cache stays empty and the card renders the static mock values.
+  const [seriesByTopic, setSeriesByTopic] = useState<Record<string, Record<string, number[]>>>({});
+  const [loadingTopic, setLoadingTopic] = useState<string | null>(null);
   const [live, setLive] = useState(false);
 
-  const symbols = etfs.map((etf) => etf.symbol);
-  const series = seriesByRange[range] ?? {};
-
   useEffect(() => {
+    if (!expanded) return;
     if (!investingUnlocked(experienceLevel) || !marketDataConfigured()) return;
-    if (seriesByRange[range]) return; // already cached — no refetch
+    const topic = topics.find((item) => item.id === expanded);
+    if (!topic || !canAccessCategory(experienceLevel, topic.category)) return;
+    if (seriesByTopic[topic.id]) return; // already cached — no refetch on range change
     let active = true;
-    setLoading(true);
-    fetchSeries(symbols, range).then((next) => {
+    setLoadingTopic(topic.id);
+    fetchDailySeries(topic.stocks.map((stock) => stock.symbol)).then((next) => {
       if (!active) return;
       if (Object.keys(next).length > 0) {
-        setSeriesByRange((prev) => ({ ...prev, [range]: next }));
+        setSeriesByTopic((prev) => ({ ...prev, [topic.id]: next }));
         setLive(true);
       }
-      setLoading(false);
+      setLoadingTopic((current) => (current === topic.id ? null : current));
     });
     return () => {
       active = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [range, experienceLevel]);
+  }, [expanded, experienceLevel]);
 
-  function handlePlant(etf: Etf) {
-    if (planted[etf.symbol]) return;
-    const reward = plantInvestment(etf.category);
-    setPlanted((current) => ({ ...current, [etf.symbol]: true }));
-    setPlantNote(`You planted ${etf.symbol} - a new ${reward.flowerName} bloomed in your garden (${reward.quantity} total).`);
+  function handlePlant(topic: InvestTopic) {
+    if (planted[topic.id]) return;
+    const reward = plantInvestment(topic.category);
+    setPlanted((current) => ({ ...current, [topic.id]: true }));
+    setPlantNote(`You planted the ${topic.title} theme - a new ${reward.flowerName} bloomed in your garden (${reward.quantity} total).`);
   }
 
   // Beginners haven't unlocked investing yet, so show a locked gate instead.
@@ -110,15 +120,15 @@ export default function StocksScreen() {
     );
   }
 
-  const accessibleEtfs = etfs.filter((etf) => canAccessCategory(experienceLevel, etf.category));
-  const lockedEtfs = etfs.filter((etf) => !canAccessCategory(experienceLevel, etf.category));
+  const accessibleTopics = topics.filter((topic) => canAccessCategory(experienceLevel, topic.category));
+  const lockedTopics = topics.filter((topic) => !canAccessCategory(experienceLevel, topic.category));
 
   return (
     <ScrollView contentContainerStyle={styles.screen}>
       <TopNav />
       <View style={styles.header}>
         <Text style={styles.eyebrow}>Invest Garden</Text>
-        <Text style={styles.title}>Educational picks for your profile.</Text>
+        <Text style={styles.title}>Explore themes, not single stocks.</Text>
       </View>
 
       <View style={styles.statusRow}>
@@ -127,13 +137,13 @@ export default function StocksScreen() {
           <Text style={styles.profileText}>{riskProfile}</Text>
         </View>
         <View style={styles.marketPill}>
-          {loading ? (
+          {loadingTopic ? (
             <ActivityIndicator color={colors.mintGreen} size="small" />
           ) : (
             <View style={styles.liveDot} />
           )}
           <Text style={styles.marketText}>
-            {loading ? "Updating prices…" : live ? "Live prices · 15-min delay" : "Simulated prices"}
+            {loadingTopic ? "Updating prices…" : live ? "Live prices · 15-min delay" : "Simulated prices"}
           </Text>
         </View>
       </View>
@@ -161,82 +171,102 @@ export default function StocksScreen() {
         ))}
       </View>
 
-      {accessibleEtfs.map((etf) => {
-        // Everything derives from the selected range's live series (when loaded),
-        // so price, change, and graph always agree and update together with the
-        // range chips. Falls back to the static mock values baked into each ETF.
-        const liveSeries = series[etf.symbol];
-        const spark = liveSeries ?? etf.spark;
-        const price = liveSeries ? liveSeries[liveSeries.length - 1] : etf.price;
-        const rangeStart = liveSeries && liveSeries.length >= 2 ? liveSeries[0] : null;
-        const changePct = rangeStart !== null ? ((price - rangeStart) / rangeStart) * 100 : etf.changePct;
-        const changeAbs = rangeStart !== null ? price - rangeStart : (etf.changePct / 100) * etf.price;
-        const positive = changePct >= 0;
-        const fits = etf.fitsProfiles.includes(riskProfile);
-        const isPlanted = planted[etf.symbol];
-        const isOpen = expanded === etf.symbol;
-        const trendColor = positive ? colors.deepGreen : colors.roseRed;
+      {accessibleTopics.map((topic) => {
+        const isOpen = expanded === topic.id;
+        const isPlanted = planted[topic.id];
+        const fits = topic.fitsProfiles.includes(riskProfile);
+        // The one daily series fetched for this topic (empty until expanded and a
+        // fetch succeeds). Each range chip slices a trailing window of it, so the
+        // graph and % change reflect the selected range. Falls back to the static
+        // mock spark when live data is unavailable.
+        const series = seriesByTopic[topic.id] ?? {};
+        const isLoading = loadingTopic === topic.id;
+        const points = RANGE_POINTS[range];
+
+        const rows = topic.stocks.map((stock) => {
+          const full = series[stock.symbol] ?? stock.spark;
+          const spark = full.length > points ? full.slice(-points) : full;
+          const price = full[full.length - 1];
+          const rangeStart = spark.length >= 2 ? spark[0] : null;
+          const changePct = rangeStart !== null && rangeStart !== 0 ? ((price - rangeStart) / rangeStart) * 100 : stock.changePct;
+          return { stock, spark, price, changePct };
+        });
         return (
-          <View key={etf.symbol} style={styles.etfCard}>
+          <View key={topic.id} style={styles.etfCard}>
             <View style={styles.etfTop}>
               <View style={styles.etfIdentity}>
-                <FlowerIcon name={etf.flowerName} size={44} />
-                <View>
-                  <Text style={styles.etfSymbol}>{etf.symbol}</Text>
-                  <Text style={styles.etfName}>{etf.name}</Text>
+                <FlowerIcon name={topic.flowerName} size={44} />
+                <View style={styles.topicHeaderText}>
+                  <Text style={styles.etfSymbol}>{topic.title}</Text>
+                  <Text style={styles.etfName}>{topic.theme}</Text>
                 </View>
-              </View>
-              <View style={styles.etfPriceCol}>
-                <Text style={styles.etfPrice}>${price.toFixed(2)}</Text>
-                <Text style={[styles.etfChange, { color: trendColor }]}>
-                  {positive ? "▲" : "▼"} ${Math.abs(changeAbs).toFixed(2)} ({Math.abs(changePct).toFixed(2)}%)
-                </Text>
-                <Text style={styles.etfChangeRange}>{range} change</Text>
               </View>
             </View>
 
-            <View style={styles.etfChartRow}>
-              <Sparkline data={spark} width={150} height={44} color={trendColor} />
-              <View style={styles.etfMetaCol}>
-                <Text style={styles.riskLabel}>{etf.riskLabel}</Text>
-                <View style={[styles.fitPill, fits ? styles.fitYes : styles.fitNo]}>
-                  <Ionicons color={fits ? colors.deepGreen : colors.mutedText} name={fits ? "checkmark-circle" : "information-circle"} size={13} />
-                  <Text style={[styles.fitText, { color: fits ? colors.deepGreen : colors.mutedText }]}>{fits ? `Fits ${riskProfile}` : "Outside profile"}</Text>
-                </View>
-                <Text style={styles.rangeNote}>{range} view</Text>
+            <View style={styles.topicMetaRow}>
+              <Text style={styles.riskLabel}>{topic.riskLabel}</Text>
+              <View style={[styles.fitPill, fits ? styles.fitYes : styles.fitNo]}>
+                <Ionicons color={fits ? colors.deepGreen : colors.mutedText} name={fits ? "checkmark-circle" : "information-circle"} size={13} />
+                <Text style={[styles.fitText, { color: fits ? colors.deepGreen : colors.mutedText }]}>{fits ? `Fits ${riskProfile}` : "Outside profile"}</Text>
               </View>
+              <Text style={styles.topicCount}>Top {topic.stocks.length}</Text>
             </View>
-
-            {isOpen ? (
-              <View style={styles.detail}>
-                <Text style={styles.detailTitle}>Why this pick?</Text>
-                <Text style={styles.detailCopy}>{etf.why}</Text>
-                <Text style={styles.detailTitle}>More info</Text>
-                <Text style={styles.detailCopy}>{etf.info}</Text>
-              </View>
-            ) : null}
 
             <View style={styles.etfActions}>
-              <TouchableOpacity onPress={() => setExpanded(isOpen ? null : etf.symbol)} style={styles.infoButton}>
-                <Text style={styles.infoButtonText}>{isOpen ? "Hide info" : "Why this pick?"}</Text>
+              <TouchableOpacity onPress={() => setExpanded(isOpen ? null : topic.id)} style={styles.infoButton}>
+                <Text style={styles.infoButtonText}>{isOpen ? "Hide stocks" : `See top ${topic.stocks.length} stocks`}</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => handlePlant(etf)} style={[styles.plantButton, isPlanted && styles.plantedButton]}>
+              <TouchableOpacity onPress={() => handlePlant(topic)} style={[styles.plantButton, isPlanted && styles.plantedButton]}>
                 <Ionicons color={colors.white} name={isPlanted ? "checkmark" : "add"} size={18} />
                 <Text style={styles.plantButtonText}>{isPlanted ? "Planted" : "Plant"}</Text>
               </TouchableOpacity>
             </View>
+
+            {isOpen ? (
+              <View style={styles.detail}>
+                <Text style={styles.detailTitle}>Why this theme?</Text>
+                <Text style={styles.detailCopy}>{topic.why}</Text>
+
+                <View style={styles.stockHeaderRow}>
+                  <Text style={styles.detailTitle}>Top {topic.stocks.length} stocks · {range}</Text>
+                  {isLoading ? <ActivityIndicator color={colors.mintGreen} size="small" /> : null}
+                </View>
+                {rows.map(({ stock, spark, price, changePct }) => {
+                  const positive = changePct >= 0;
+                  const trendColor = positive ? colors.deepGreen : colors.roseRed;
+                  return (
+                    <View key={stock.symbol} style={styles.stockRow}>
+                      <View style={styles.stockIdentity}>
+                        <Text style={styles.stockSymbol}>{stock.symbol}</Text>
+                        <Text style={styles.stockName} numberOfLines={1}>{stock.name}</Text>
+                      </View>
+                      <Sparkline data={spark} width={72} height={28} color={trendColor} />
+                      <View style={styles.stockPriceCol}>
+                        <Text style={styles.stockPrice}>${price.toFixed(2)}</Text>
+                        <Text style={[styles.stockChange, { color: trendColor }]}>
+                          {positive ? "▲" : "▼"} {Math.abs(changePct).toFixed(2)}% · {range}
+                        </Text>
+                      </View>
+                    </View>
+                  );
+                })}
+
+                <Text style={styles.detailTitle}>More info</Text>
+                <Text style={styles.detailCopy}>{topic.info}</Text>
+              </View>
+            ) : null}
           </View>
         );
       })}
 
-      {lockedEtfs.map((etf) => (
-        <View key={etf.symbol} style={styles.lockedEtfCard}>
+      {lockedTopics.map((topic) => (
+        <View key={topic.id} style={styles.lockedEtfCard}>
           <View style={styles.lockedIcon}>
             <Ionicons color={colors.mutedText} name="lock-closed" size={20} />
           </View>
           <View style={styles.lockedEtfText}>
-            <Text style={styles.lockedEtfSymbol}>{etf.symbol} · {etf.name}</Text>
-            <Text style={styles.lockedEtfNote}>{etf.riskLabel}, unlocks at the Advanced level.</Text>
+            <Text style={styles.lockedEtfSymbol}>{topic.title}</Text>
+            <Text style={styles.lockedEtfNote}>{topic.riskLabel}, unlocks at the Advanced level.</Text>
           </View>
         </View>
       ))}
@@ -410,6 +440,7 @@ const styles = StyleSheet.create({
   },
   etfIdentity: {
     alignItems: "center",
+    flex: 1,
     flexDirection: "row",
     gap: 10
   },
@@ -495,6 +526,61 @@ const styles = StyleSheet.create({
     color: colors.darkText,
     fontSize: 14,
     lineHeight: 20
+  },
+  topicHeaderText: {
+    flex: 1
+  },
+  topicMetaRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 10
+  },
+  topicCount: {
+    color: colors.mutedText,
+    fontSize: 12,
+    fontWeight: "800",
+    marginLeft: "auto"
+  },
+  stockHeaderRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 10,
+    justifyContent: "space-between"
+  },
+  stockRow: {
+    alignItems: "center",
+    backgroundColor: colors.white,
+    borderRadius: 14,
+    flexDirection: "row",
+    gap: 10,
+    padding: 10
+  },
+  stockIdentity: {
+    flex: 1
+  },
+  stockSymbol: {
+    color: colors.darkText,
+    fontSize: 15,
+    fontWeight: "900"
+  },
+  stockName: {
+    color: colors.mutedText,
+    fontSize: 12,
+    fontWeight: "700"
+  },
+  stockPriceCol: {
+    alignItems: "flex-end",
+    minWidth: 78
+  },
+  stockPrice: {
+    color: colors.darkText,
+    fontSize: 15,
+    fontWeight: "900"
+  },
+  stockChange: {
+    fontSize: 12,
+    fontWeight: "900",
+    marginTop: 2
   },
   etfActions: {
     flexDirection: "row",

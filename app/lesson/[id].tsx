@@ -7,6 +7,7 @@ import { BackButton } from "@/components/BackButton";
 import { ProfileButton } from "@/components/ProfileButton";
 import { FlowerIcon } from "@/components/FlowerIcon";
 import { PrimaryButton } from "@/components/PrimaryButton";
+import { VideoEmbed } from "@/components/VideoEmbed";
 import { findLesson } from "@/data/lessons";
 import { completeLesson } from "@/services/api";
 import { useGarden } from "@/state/garden";
@@ -77,6 +78,21 @@ export default function LessonScreen() {
           <Text style={styles.title}>{lesson.title}</Text>
           <Text style={styles.summary}>{lesson.summary}</Text>
         </View>
+
+        {lesson.videoUrl ? (
+          <View style={styles.videoCard}>
+            <View style={styles.videoHeader}>
+              <View style={styles.videoIcon}>
+                <Ionicons color={colors.roseRed} name="play" size={18} />
+              </View>
+              <View style={styles.videoHeaderText}>
+                <Text style={styles.videoTitle}>Watch & learn</Text>
+                <Text style={styles.videoSubtitle}>A quick video to bring this lesson to life</Text>
+              </View>
+            </View>
+            <VideoEmbed url={lesson.videoUrl} />
+          </View>
+        ) : null}
 
         {lesson.sourceUrl ? (
           <TouchableOpacity
@@ -177,6 +193,41 @@ const styles = StyleSheet.create({
     color: colors.mutedText,
     fontSize: 16,
     lineHeight: 25
+  },
+  videoCard: {
+    backgroundColor: colors.card,
+    borderRadius: 24,
+    gap: 14,
+    padding: 16,
+    ...shadow
+  },
+  videoHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 12
+  },
+  videoIcon: {
+    alignItems: "center",
+    backgroundColor: "#FBE3E6",
+    borderRadius: 16,
+    height: 44,
+    justifyContent: "center",
+    width: 44
+  },
+  videoHeaderText: {
+    flex: 1,
+    gap: 3
+  },
+  videoTitle: {
+    color: colors.darkText,
+    fontSize: 16,
+    fontWeight: "900"
+  },
+  videoSubtitle: {
+    color: colors.mutedText,
+    fontSize: 13,
+    fontWeight: "700",
+    lineHeight: 18
   },
   sourceCard: {
     alignItems: "center",

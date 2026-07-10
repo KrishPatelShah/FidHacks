@@ -99,6 +99,20 @@ export async function fetchQuotes(symbols: string[]): Promise<Record<string, Liv
 export async function fetchSeries(symbols: string[], range: TimeRange): Promise<Record<string, number[]>> {
   if (symbols.length === 0) return {};
   const { interval, outputsize } = RANGE_CONFIG[range];
+  return fetchDailyBars(symbols, interval, outputsize);
+}
+
+// Fetch one daily close-price series per symbol (default ~3 months of bars).
+// The Stocks tab fetches this ONCE per topic and slices it locally for each
+// range chip, so switching 1D/1W/1M/3M never triggers another request — that
+// keeps us well under the free tier's per-minute credit limit (no 429s) and
+// makes the graphs update instantly and consistently when the range changes.
+export async function fetchDailySeries(symbols: string[], outputsize = 66): Promise<Record<string, number[]>> {
+  return fetchDailyBars(symbols, "1day", outputsize);
+}
+
+async function fetchDailyBars(symbols: string[], interval: string, outputsize: number): Promise<Record<string, number[]>> {
+  if (symbols.length === 0) return {};
   const body = await getJson(`/time_series?symbol=${symbols.join(",")}&interval=${interval}&outputsize=${outputsize}`);
   const batch = normalizeBatch(body, symbols);
   const result: Record<string, number[]> = {};

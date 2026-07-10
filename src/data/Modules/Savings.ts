@@ -16,6 +16,7 @@ export const SavingsModule: LearningModule = {
         "Learn how emergency savings protect you from unexpected expenses and provide financial security when life changes.",
       sourceUrl:
         "https://www.fidelity.com/learning-center/smart-money/emergency-fund",
+      videoUrl: "https://youtu.be/VFkci8h9m7w",
       reward: { sunlight: 1, water: 1 },
     },
 

@@ -51,6 +51,7 @@ export type Lesson = {
   difficulty: "beginner" | "intermediate" | "advanced";
   contentType: "video" | "reading" | "interactive";
   sourceUrl?: string;
+  videoUrl?: string;
   summary: string;
   reward: {
     sunlight?: number;
@@ -110,6 +111,32 @@ export type Etf = {
   fitsProfiles: RiskProfile[];
   why: string;
   info: string;
+};
+
+// A single company/fund inside an investment topic. price/changePct/spark are
+// static mock fallbacks used when live market data is unavailable.
+export type TopicStock = {
+  symbol: string;
+  name: string;
+  price: number;
+  changePct: number;
+  spark: number[];
+};
+
+// A themed basket of stocks (e.g. "Big Tech", "Everyday Essentials"). The Stocks
+// tab surfaces the top 5 names per topic instead of recommending a single stock,
+// while category/flowerName keep the garden planting + level gating working.
+export type InvestTopic = {
+  id: string;
+  title: string;
+  theme: string;
+  category: PlantCategory;
+  flowerName: string;
+  riskLabel: string;
+  fitsProfiles: RiskProfile[];
+  why: string;
+  info: string;
+  stocks: TopicStock[];
 };
 
 export type AchievementMetric =

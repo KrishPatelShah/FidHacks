@@ -1,32 +1,56 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { GardenPreview } from "@/components/GardenPreview";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { ResourcePill } from "@/components/ResourcePill";
 import { useGarden } from "@/state/garden";
 import { colors, shadow } from "@/theme/colors";
+import { ExperienceLevel } from "@/types/domain";
 
-const actionCards = [
-  {
+type ActionCard = { title: string; copy: string; accent: string; href: string };
+
+// The "Recommended Next Action" adapts to the user's level; the other two are
+// consistent habit-builders. Every card links to a real screen.
+const recommendedByLevel: Record<ExperienceLevel, ActionCard> = {
+  beginner: {
     title: "Recommended Next Action",
-    copy: "Complete the APR quiz to grow your Rose.",
-    accent: colors.roseRed
+    copy: "Start Budgeting Basics — track expected vs. actual spending.",
+    accent: colors.roseRed,
+    href: "/lesson/budgeting-expected-actual"
   },
+  intermediate: {
+    title: "Recommended Next Action",
+    copy: "Explore low-risk bonds to grow your Bluebell.",
+    accent: colors.skyBlue,
+    href: "/(tabs)/stocks"
+  },
+  advanced: {
+    title: "Recommended Next Action",
+    copy: "Research mutual funds & stocks, then plant an investment flower.",
+    accent: colors.orchidPurple,
+    href: "/(tabs)/stocks"
+  }
+};
+
+const sharedCards: ActionCard[] = [
   {
     title: "Weekly Challenge",
     copy: "Create your first weekly budget.",
-    accent: colors.sunflowerYellow
+    accent: colors.sunflowerYellow,
+    href: "/(tabs)/budget"
   },
   {
     title: "Review Your Budget",
     copy: "Review expected vs. actual spending to earn fertilizer.",
-    accent: colors.softOrange
+    accent: colors.softOrange,
+    href: "/(tabs)/budget"
   }
 ];
 
 export default function GardenDashboardScreen() {
-  const { plants, totals, streak, totalFlowers } = useGarden();
+  const { plants, totals, streak, totalFlowers, experienceLevel } = useGarden();
+  const levelLabel = experienceLevel.charAt(0).toUpperCase() + experienceLevel.slice(1);
 
   return (
     <ScrollView contentContainerStyle={styles.screen}>
@@ -35,20 +59,20 @@ export default function GardenDashboardScreen() {
           <Ionicons color={colors.softOrange} name="leaf" size={18} />
           <Text style={styles.streakText}>{streak} Day Streak</Text>
         </View>
-        <Link href="/(tabs)/profile" style={styles.avatar}>
-          <Text style={styles.avatarText}>DG</Text>
-        </Link>
+        <View style={styles.profileRow}>
+          <View style={styles.levelBadge}>
+            <Ionicons color={colors.deepGreen} name="ribbon" size={14} />
+            <Text style={styles.levelText}>{levelLabel}</Text>
+          </View>
+          <Link href="/(tabs)/profile" style={styles.avatar}>
+            <Text style={styles.avatarText}>DG</Text>
+          </Link>
+        </View>
       </View>
 
       <View style={styles.header}>
         <Text style={styles.eyebrow}>Financial Garden</Text>
         <Text style={styles.title}>Your money habits are blooming.</Text>
-      </View>
-
-      <View style={styles.resources}>
-        <ResourcePill label="Sunlight" value={totals.sunlight} />
-        <ResourcePill label="Water" value={totals.water} />
-        <ResourcePill label="Fertilizer" value={totals.fertilizer} />
       </View>
 
       <GardenPreview plants={plants} />
@@ -61,14 +85,17 @@ export default function GardenDashboardScreen() {
       </View>
 
       <View style={styles.actionStack}>
-        {actionCards.map((card) => (
-          <View key={card.title} style={styles.actionCard}>
-            <View style={[styles.actionDot, { backgroundColor: card.accent }]} />
-            <View style={styles.actionText}>
-              <Text style={styles.cardTitle}>{card.title}</Text>
-              <Text style={styles.cardCopy}>{card.copy}</Text>
-            </View>
-          </View>
+        {[recommendedByLevel[experienceLevel], ...sharedCards].map((card) => (
+          <Link key={card.title} href={card.href} asChild>
+            <TouchableOpacity activeOpacity={0.7} style={styles.actionCard}>
+              <View style={[styles.actionDot, { backgroundColor: card.accent }]} />
+              <View style={styles.actionText}>
+                <Text style={styles.cardTitle}>{card.title}</Text>
+                <Text style={styles.cardCopy}>{card.copy}</Text>
+              </View>
+              <Ionicons color={colors.mutedText} name="chevron-forward" size={20} />
+            </TouchableOpacity>
+          </Link>
         ))}
       </View>
 
@@ -112,6 +139,28 @@ const styles = StyleSheet.create({
   streakText: {
     color: colors.darkText,
     fontSize: 14,
+    fontWeight: "900"
+  },
+  profileRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 10
+  },
+  levelBadge: {
+    alignItems: "center",
+    backgroundColor: colors.card,
+    borderColor: colors.line,
+    borderRadius: 999,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    ...shadow
+  },
+  levelText: {
+    color: colors.darkText,
+    fontSize: 13,
     fontWeight: "900"
   },
   avatar: {

@@ -16,12 +16,12 @@ import { submitQuestionnaireRemote } from "@/services/api";
 import { saveAssessment } from "@/services/assessmentStorage";
 import { useGarden } from "@/state/garden";
 import { colors, shadow } from "@/theme/colors";
-import { ConfidenceAssessment } from "@/types/domain";
+import { ConfidenceAssessment, ExperienceLevel } from "@/types/domain";
 
 const LIKERT = [1, 2, 3, 4, 5] as const;
 
 export default function QuestionnaireScreen() {
-  const { saveConfidenceAssessment } = useGarden();
+  const { saveConfidenceAssessment, setExperienceLevel, startFreshGarden } = useGarden();
   const [responses, setResponses] = useState<Record<string, number>>({});
   const [result, setResult] = useState<ConfidenceAssessment | null>(null);
   const [saving, setSaving] = useState(false);
@@ -48,12 +48,19 @@ export default function QuestionnaireScreen() {
       };
       await saveAssessment(assessment);
       saveConfidenceAssessment(assessment, riskProfileFromAssessment(assessment));
+      setExperienceLevel(assessment.level.toLowerCase() as ExperienceLevel);
       // Best-effort: persist to the FastAPI backend (also updates the profile path).
       submitQuestionnaireRemote(toQuestionnairePayload(responses));
       setResult(assessment);
     } finally {
       setSaving(false);
     }
+  }
+
+  function handleStartGrowing() {
+    // Every user begins with an empty clearing — no flowers until they earn them.
+    startFreshGarden();
+    router.replace("/(tabs)/garden");
   }
 
   if (result) {
@@ -72,7 +79,7 @@ export default function QuestionnaireScreen() {
             </Text>
             <Text style={styles.resultCopy}>{copy.description}</Text>
           </View>
-          <PrimaryButton label="Start Growing My Garden" onPress={() => router.replace("/(tabs)/garden")} />
+          <PrimaryButton label="Start Growing My Garden" onPress={handleStartGrowing} />
         </ScrollView>
       </View>
     );

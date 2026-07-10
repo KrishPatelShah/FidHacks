@@ -11,6 +11,7 @@ import {
   AchievementMetric,
   ConfidenceAssessment,
   ConfidenceLevel,
+  ExperienceLevel,
   ParsedReceipt,
   Plant,
   PlantCategory,
@@ -33,6 +34,7 @@ type PersistedState = {
   receiptsScanned: number;
   transactions: Transaction[];
   riskProfile: RiskProfile;
+  experienceLevel: ExperienceLevel;
   unlockedAchievements: string[];
   confidenceAssessment: ConfidenceAssessment | null;
 };
@@ -66,6 +68,7 @@ type GardenContextValue = {
   riskProfile: RiskProfile;
   confidenceAssessment: ConfidenceAssessment | null;
   confidenceLevel: ConfidenceLevel | null;
+  experienceLevel: ExperienceLevel;
   totals: { sunlight: number; water: number; fertilizer: number };
   totalFlowers: number;
   unlockedAchievements: string[];
@@ -78,7 +81,9 @@ type GardenContextValue = {
   commitReceipt: (receipt: ParsedReceipt) => ReceiptCommitResult;
   setRiskProfile: (profile: RiskProfile) => void;
   saveConfidenceAssessment: (assessment: ConfidenceAssessment, profile: RiskProfile) => void;
+  setExperienceLevel: (level: ExperienceLevel) => void;
   dismissCelebration: () => void;
+  startFreshGarden: () => void;
   resetGarden: () => void;
 };
 
@@ -123,6 +128,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>(sampleTransactions);
   const [riskProfile, setRiskProfileState] = useState<RiskProfile>("Moderate");
   const [confidenceAssessment, setConfidenceAssessment] = useState<ConfidenceAssessment | null>(null);
+  const [experienceLevel, setExperienceLevelState] = useState<ExperienceLevel>("beginner");
   const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>([]);
   const [celebrationQueue, setCelebrationQueue] = useState<Achievement[]>([]);
   const [hydrated, setHydrated] = useState(false);
@@ -151,6 +157,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
           if (Array.isArray(parsed.transactions)) setTransactions(parsed.transactions);
           if (parsed.riskProfile) setRiskProfileState(parsed.riskProfile);
           if (parsed.confidenceAssessment) setConfidenceAssessment(parsed.confidenceAssessment);
+          if (parsed.experienceLevel) setExperienceLevelState(parsed.experienceLevel);
           if (Array.isArray(parsed.unlockedAchievements)) setUnlockedAchievements(parsed.unlockedAchievements);
         }
       } catch {
@@ -190,6 +197,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       receiptsScanned,
       transactions,
       riskProfile,
+      experienceLevel,
       unlockedAchievements,
       confidenceAssessment
     };
@@ -205,6 +213,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     receiptsScanned,
     transactions,
     riskProfile,
+    experienceLevel,
     unlockedAchievements,
     confidenceAssessment
   ]);
@@ -375,7 +384,35 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     setRiskProfileState(profile);
   }, []);
 
+  const setExperienceLevel = useCallback((level: ExperienceLevel) => setExperienceLevelState(level), []);
+
   const dismissCelebration = useCallback(() => setCelebrationQueue((queue) => queue.slice(1)), []);
+
+  // A brand-new user finishing onboarding starts with an empty clearing: the
+  // plant categories exist but nothing has been grown yet.
+  const startFreshGarden = useCallback(() => {
+    setPlants(
+      demoPlants.map((plant) => ({
+        ...plant,
+        quantity: 0,
+        growth: 0,
+        stage: 0,
+        water: 0,
+        sunlight: 0,
+        fertilizer: 0,
+        unlocked: false
+      }))
+    );
+    setStreak(0);
+    setLessonsCompleted(0);
+    setQuizzesPassed(0);
+    setBudgetsLogged(0);
+    setFlowersGrown(0);
+    setInvestmentsPlanted(0);
+    setUnlockedAchievements([]);
+    setCelebrationQueue([]);
+    seededRef.current = false;
+  }, []);
 
   const resetGarden = useCallback(() => {
     setPlants(cloneDemo());
@@ -389,6 +426,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     setTransactions(sampleTransactions);
     setRiskProfileState("Moderate");
     setConfidenceAssessment(null);
+    setExperienceLevelState("beginner");
     setUnlockedAchievements([]);
     setCelebrationQueue([]);
     seededRef.current = false;
@@ -411,6 +449,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       riskProfile,
       confidenceAssessment,
       confidenceLevel: confidenceAssessment?.level ?? null,
+      experienceLevel,
       totals,
       totalFlowers,
       unlockedAchievements,
@@ -423,7 +462,9 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       commitReceipt,
       setRiskProfile,
       saveConfidenceAssessment,
+      setExperienceLevel,
       dismissCelebration,
+      startFreshGarden,
       resetGarden
     }),
     [
@@ -440,6 +481,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       transactions,
       riskProfile,
       confidenceAssessment,
+      experienceLevel,
       totals,
       totalFlowers,
       unlockedAchievements,
@@ -452,7 +494,9 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       commitReceipt,
       setRiskProfile,
       saveConfidenceAssessment,
+      setExperienceLevel,
       dismissCelebration,
+      startFreshGarden,
       resetGarden
     ]
   );

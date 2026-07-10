@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
+import { Text } from "@/components/AppText";
 import { colors } from "@/theme/colors";
 
 export function ResourcePill({ label, value }: { label: string; value: number }) {

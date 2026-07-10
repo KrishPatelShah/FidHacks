@@ -1,7 +1,8 @@
 import { LinearGradient as ScreenGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { Animated, Easing, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Animated, Easing, Modal, Pressable, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Text } from "@/components/AppText";
 import { FlowerIcon } from "@/components/FlowerIcon";
 import Svg, {
   Circle,

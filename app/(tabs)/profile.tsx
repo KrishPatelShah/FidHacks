@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, Switch, TouchableOpacity, View } from "react-native";
+import { Text } from "@/components/AppText";
 import { FlowerIcon } from "@/components/FlowerIcon";
 import { ProgressBar } from "@/components/ProgressBar";
 import { TopNav } from "@/components/TopNav";

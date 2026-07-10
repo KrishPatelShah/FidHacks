@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Text } from "@/components/AppText";
 import { BackButton } from "@/components/BackButton";
 import { Logo } from "@/components/Logo";
 import { PrimaryButton } from "@/components/PrimaryButton";

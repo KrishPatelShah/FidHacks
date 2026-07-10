@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Modal, Pressable, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
+import { Text } from "@/components/AppText";
 import { FlowerIcon } from "@/components/FlowerIcon";
 import { GardenPreview } from "@/components/GardenPreview";
 import { TopNav } from "@/components/TopNav";

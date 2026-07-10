@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useRef } from "react";
-import { Animated, Easing, Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, Easing, Modal, Pressable, StyleSheet, View } from "react-native";
+import { Text } from "@/components/AppText";
 import { useGarden } from "@/state/garden";
 import { colors, shadow } from "@/theme/colors";
 

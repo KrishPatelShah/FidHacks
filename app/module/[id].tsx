@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Link, useLocalSearchParams } from "expo-router";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Text } from "@/components/AppText";
 import { BackButton } from "@/components/BackButton";
 import { FlowerIcon } from "@/components/FlowerIcon";
 import { learningModules } from "@/data/lessons";

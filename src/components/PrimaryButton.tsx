@@ -1,5 +1,6 @@
 import { ComponentRef, forwardRef, ReactNode } from "react";
-import { Pressable, PressableProps, StyleSheet, Text, View } from "react-native";
+import { Pressable, PressableProps, StyleSheet, View } from "react-native";
+import { Text } from "@/components/AppText";
 import { colors, shadow } from "@/theme/colors";
 
 type Props = PressableProps & {

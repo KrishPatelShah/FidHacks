@@ -8,7 +8,7 @@ import { useGarden } from "@/state/garden";
 import { colors } from "@/theme/colors";
 
 export default function TabsLayout() {
-  const { experienceLevel } = useGarden();
+  const { experienceLevel, dyslexiaMode } = useGarden();
   const stocksLocked = !investingUnlocked(experienceLevel);
 
   return (
@@ -31,7 +31,8 @@ export default function TabsLayout() {
           },
           tabBarLabelStyle: {
             fontSize: 11,
-            fontWeight: "800"
+            fontWeight: "800",
+            fontFamily: dyslexiaMode ? "OpenDyslexic-Bold" : undefined
           },
           tabBarAllowFontScaling: false
         }}

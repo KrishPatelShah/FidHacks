@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Text } from "@/components/AppText";
 import { GardenPreview } from "@/components/GardenPreview";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { ResourcePill } from "@/components/ResourcePill";

@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
-import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, Modal, Pressable, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Text } from "@/components/AppText";
 import { spendCategoryLabels } from "@/data/transactions";
 import { colors, shadow } from "@/theme/colors";
 import { ParsedReceipt, ParsedReceiptItem, SpendCategory } from "@/types/domain";

@@ -1,12 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
-import { useState } from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { FlowerIcon } from "@/components/FlowerIcon";
 import { Sparkline } from "@/components/Sparkline";
 import { TopNav } from "@/components/TopNav";
 import { etfs, riskProfileCopy, timeRanges, TimeRange } from "@/data/investments";
 import { canAccessCategory, investingUnlocked } from "@/lib/levels";
+import { fetchSeries, marketDataConfigured } from "@/services/marketData";
 import { useGarden } from "@/state/garden";
 import { colors, shadow } from "@/theme/colors";
 import { Etf } from "@/types/domain";
@@ -24,6 +25,38 @@ export default function StocksScreen() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [planted, setPlanted] = useState<Record<string, boolean>>({});
   const [plantNote, setPlantNote] = useState<string | null>(null);
+
+  // Live historical series per range, cached so each range is fetched at most
+  // once (the free API tier is rate-limited — refetching on every tap would trip
+  // it). Price, change, and the graph are all derived from this one dataset, so
+  // they always agree and always move together when the range changes. When a
+  // fetch fails (no key, rate limit, offline) the cache stays empty for that
+  // range and the screen renders the static mock values instead.
+  const [seriesByRange, setSeriesByRange] = useState<Partial<Record<TimeRange, Record<string, number[]>>>>({});
+  const [loading, setLoading] = useState(false);
+  const [live, setLive] = useState(false);
+
+  const symbols = etfs.map((etf) => etf.symbol);
+  const series = seriesByRange[range] ?? {};
+
+  useEffect(() => {
+    if (!investingUnlocked(experienceLevel) || !marketDataConfigured()) return;
+    if (seriesByRange[range]) return; // already cached — no refetch
+    let active = true;
+    setLoading(true);
+    fetchSeries(symbols, range).then((next) => {
+      if (!active) return;
+      if (Object.keys(next).length > 0) {
+        setSeriesByRange((prev) => ({ ...prev, [range]: next }));
+        setLive(true);
+      }
+      setLoading(false);
+    });
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [range, experienceLevel]);
 
   function handlePlant(etf: Etf) {
     if (planted[etf.symbol]) return;
@@ -93,8 +126,14 @@ export default function StocksScreen() {
           <Text style={styles.profileText}>{riskProfile}</Text>
         </View>
         <View style={styles.marketPill}>
-          <View style={styles.liveDot} />
-          <Text style={styles.marketText}>Market open · 15-min delay</Text>
+          {loading ? (
+            <ActivityIndicator color={colors.mintGreen} size="small" />
+          ) : (
+            <View style={styles.liveDot} />
+          )}
+          <Text style={styles.marketText}>
+            {loading ? "Updating prices…" : live ? "Live prices · 15-min delay" : "Simulated prices"}
+          </Text>
         </View>
       </View>
 
@@ -122,7 +161,16 @@ export default function StocksScreen() {
       </View>
 
       {accessibleEtfs.map((etf) => {
-        const positive = etf.changePct >= 0;
+        // Everything derives from the selected range's live series (when loaded),
+        // so price, change, and graph always agree and update together with the
+        // range chips. Falls back to the static mock values baked into each ETF.
+        const liveSeries = series[etf.symbol];
+        const spark = liveSeries ?? etf.spark;
+        const price = liveSeries ? liveSeries[liveSeries.length - 1] : etf.price;
+        const rangeStart = liveSeries && liveSeries.length >= 2 ? liveSeries[0] : null;
+        const changePct = rangeStart !== null ? ((price - rangeStart) / rangeStart) * 100 : etf.changePct;
+        const changeAbs = rangeStart !== null ? price - rangeStart : (etf.changePct / 100) * etf.price;
+        const positive = changePct >= 0;
         const fits = etf.fitsProfiles.includes(riskProfile);
         const isPlanted = planted[etf.symbol];
         const isOpen = expanded === etf.symbol;
@@ -138,15 +186,16 @@ export default function StocksScreen() {
                 </View>
               </View>
               <View style={styles.etfPriceCol}>
-                <Text style={styles.etfPrice}>${etf.price.toFixed(2)}</Text>
+                <Text style={styles.etfPrice}>${price.toFixed(2)}</Text>
                 <Text style={[styles.etfChange, { color: trendColor }]}>
-                  {positive ? "▲" : "▼"} {Math.abs(etf.changePct).toFixed(2)}%
+                  {positive ? "▲" : "▼"} ${Math.abs(changeAbs).toFixed(2)} ({Math.abs(changePct).toFixed(2)}%)
                 </Text>
+                <Text style={styles.etfChangeRange}>{range} change</Text>
               </View>
             </View>
 
             <View style={styles.etfChartRow}>
-              <Sparkline data={etf.spark} width={150} height={44} color={trendColor} />
+              <Sparkline data={spark} width={150} height={44} color={trendColor} />
               <View style={styles.etfMetaCol}>
                 <Text style={styles.riskLabel}>{etf.riskLabel}</Text>
                 <View style={[styles.fitPill, fits ? styles.fitYes : styles.fitNo]}>
@@ -192,8 +241,13 @@ export default function StocksScreen() {
       ))}
 
       <View style={styles.disclaimer}>
-        <Text style={styles.disclaimerTitle}>Simulated & educational only</Text>
-        <Text style={styles.disclaimerCopy}>Prices and picks are mock data for learning. This is not investment advice. Planting grows the matching flower in your garden - it simulates a position, it does not buy anything real.</Text>
+        <Text style={styles.disclaimerTitle}>Educational only</Text>
+        <Text style={styles.disclaimerCopy}>
+          {live
+            ? "Prices and charts are live market data shown for learning, on a delay. The picks are curated examples, not investment advice."
+            : "Prices and picks are simulated data for learning. This is not investment advice."}
+          {" "}Planting grows the matching flower in your garden - it simulates a position, it does not buy anything real.
+        </Text>
       </View>
 
       <View style={styles.ladderCard}>
@@ -379,6 +433,12 @@ const styles = StyleSheet.create({
   etfChange: {
     fontSize: 14,
     fontWeight: "900"
+  },
+  etfChangeRange: {
+    color: colors.mutedText,
+    fontSize: 11,
+    fontWeight: "700",
+    marginTop: 2
   },
   etfChartRow: {
     alignItems: "center",

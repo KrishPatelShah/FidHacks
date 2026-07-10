@@ -3,8 +3,7 @@ import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, 
 import { achievementDefs } from "@/data/achievements";
 import { demoPlants } from "@/data/plants";
 import { sampleTransactions } from "@/data/transactions";
-import { applyGardenReward, GardenAction } from "@/lib/gardenGrowth";
-import { Bootstrap, clearAccessToken, demoLogin, getAccessToken, getBootstrap, QuizAttemptResult } from "@/services/api";
+import { ApiError, Bootstrap, clearAccessToken, demoLogin, getAccessToken, getBootstrap, QuizAttemptResult } from "@/services/api";
 import { Achievement, AchievementMetric, Plant, PlantCategory, RiskProfile, SpendCategory, Transaction, TransactionSource } from "@/types/domain";
 
 const STORAGE_KEY = "financial_garden_local_features_v1";
@@ -17,17 +16,8 @@ type PersistedState = {
   unlockedAchievements: string[];
 };
 
-export type GrowthResult = {
-  flowerName: string;
-  category: PlantCategory;
-  earnedFlower: boolean;
-  quantity: number;
-  growth: number;
-};
-
 type GardenContextValue = {
   hydrated: boolean;
-  authenticated: boolean;
   loadingAccount: boolean;
   accountError: string | null;
   plants: Plant[];
@@ -43,16 +33,15 @@ type GardenContextValue = {
   totalFlowers: number;
   unlockedAchievements: string[];
   celebration: Achievement | null;
-  logBudget: (category?: PlantCategory) => GrowthResult | null;
-  plantInvestment: (category: PlantCategory) => GrowthResult | null;
+  logBudget: (category?: PlantCategory) => void;
+  plantInvestment: (category: PlantCategory) => void;
   addTransaction: (input: { merchant: string; amount: number; category: SpendCategory; source: TransactionSource; note?: string }) => void;
   setRiskProfile: (profile: RiskProfile) => void;
   dismissCelebration: () => void;
-  resetGarden: () => void;
+  resetLocalDemoData: () => void;
   loginDemo: () => Promise<void>;
   refreshAccount: () => Promise<void>;
   applyQuizResult: (result: QuizAttemptResult) => void;
-  clearSession: () => Promise<void>;
 };
 
 const GardenContext = createContext<GardenContextValue | null>(null);
@@ -80,7 +69,6 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>([]);
   const [celebrationQueue, setCelebrationQueue] = useState<Achievement[]>([]);
   const [hydrated, setHydrated] = useState(false);
-  const [authenticated, setAuthenticated] = useState(false);
   const [loadingAccount, setLoadingAccount] = useState(false);
   const [accountError, setAccountError] = useState<string | null>(null);
   const hydratedRef = useRef(false);
@@ -111,13 +99,17 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       try {
         const token = await getAccessToken();
         if (token) {
-          setAuthenticated(true);
           setLoadingAccount(true);
           try {
             const account = await getBootstrap();
             applyBootstrap(account);
           } catch (error) {
-            setAccountError(error instanceof Error ? error.message : "Could not load your garden.");
+            if (error instanceof ApiError && error.status === 401) {
+              await clearAccessToken();
+              setAccountError("Your demo session expired. Sign in again to load your garden.");
+            } else {
+              setAccountError(error instanceof Error ? error.message : "Could not load your garden.");
+            }
           } finally {
             setLoadingAccount(false);
           }
@@ -136,8 +128,10 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     setAccountError(null);
     try {
       applyBootstrap(await getBootstrap());
-      setAuthenticated(true);
     } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        await clearAccessToken();
+      }
       setAccountError(error instanceof Error ? error.message : "Could not load your garden.");
       throw error;
     } finally {
@@ -156,21 +150,18 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     }
   }, [refreshAccount]);
 
-  const clearSession = useCallback(async () => {
-    await clearAccessToken();
-    setAuthenticated(false);
-    setAccountError(null);
-  }, []);
-
   const applyQuizResult = useCallback((result: QuizAttemptResult) => {
     if (result.plant) {
+      const previous = plants.find((plant) => plant.id === result.plant!.id);
+      if (previous && result.plant.quantity > previous.quantity) {
+        setFlowersGrown((count) => count + result.plant!.quantity - previous.quantity);
+      }
       setPlants((current) => current.map((plant) => plant.id === result.plant!.id ? result.plant! : plant));
     }
     if (result.profile) setStreak(result.profile.streakCount);
     if (typeof result.lessonsCompleted === "number") setLessonsCompleted(result.lessonsCompleted);
     if (typeof result.quizzesPassed === "number") setQuizzesPassed(result.quizzesPassed);
-    if (result.passed) setQuizzesPassed((count) => typeof result.quizzesPassed === "number" ? result.quizzesPassed : count + 1);
-  }, []);
+  }, [plants]);
 
   useEffect(() => {
     if (!hydratedRef.current) return;
@@ -219,53 +210,28 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     const satisfied = achievementDefs.filter((a) => metrics[a.metric] >= a.goal).map((a) => a.id);
     setUnlockedAchievements((prev) => {
       const fresh = satisfied.filter((id) => !prev.includes(id));
-      if (fresh.length === 0) return prev;
       if (seededRef.current) {
         const unlocked = fresh.map((id) => achievementDefs.find((a) => a.id === id)).filter((a): a is Achievement => Boolean(a));
         setCelebrationQueue((queue) => [...queue, ...unlocked]);
       }
-      return [...prev, ...fresh];
+      if (prev.length === satisfied.length && prev.every((id) => satisfied.includes(id))) return prev;
+      return satisfied;
     });
     seededRef.current = true;
   }, [hydrated, metrics]);
 
-  const grow = useCallback((category: PlantCategory, action: GardenAction): GrowthResult | null => {
-    let result: GrowthResult | null = null;
-    setPlants((current) =>
-      current.map((plant) => {
-        if (plant.type !== category) return plant;
-        const before = plant.quantity;
-        const next = applyGardenReward({ ...plant, unlocked: true }, action);
-        result = {
-          flowerName: next.flowerName,
-          category: next.type,
-          earnedFlower: next.quantity > before,
-          quantity: next.quantity,
-          growth: next.growth
-        };
-        return next;
-      })
-    );
-    if (result && (result as GrowthResult).earnedFlower) {
-      setFlowersGrown((count) => count + 1);
-    }
-    return result;
-  }, []);
-
   const logBudget = useCallback(
-    (category: PlantCategory = "budgeting") => {
+    (_category: PlantCategory = "budgeting") => {
       setBudgetsLogged((count) => count + 1);
-      return grow(category, "log_budget");
     },
-    [grow]
+    []
   );
 
   const plantInvestment = useCallback(
-    (category: PlantCategory) => {
+    (_category: PlantCategory) => {
       setInvestmentsPlanted((count) => count + 1);
-      return grow(category, "plant_investment");
     },
-    [grow]
+    []
   );
 
   const addTransaction = useCallback(
@@ -288,11 +254,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
 
   const dismissCelebration = useCallback(() => setCelebrationQueue((queue) => queue.slice(1)), []);
 
-  const resetGarden = useCallback(() => {
-    setPlants(cloneDemo());
-    setStreak(7);
-    setLessonsCompleted(0);
-    setQuizzesPassed(0);
+  const resetLocalDemoData = useCallback(() => {
     setBudgetsLogged(0);
     setFlowersGrown(0);
     setInvestmentsPlanted(0);
@@ -306,7 +268,6 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   const value = useMemo<GardenContextValue>(
     () => ({
       hydrated,
-      authenticated,
       loadingAccount,
       accountError,
       plants,
@@ -327,15 +288,13 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       addTransaction,
       setRiskProfile,
       dismissCelebration,
-      resetGarden,
+      resetLocalDemoData,
       loginDemo,
       refreshAccount,
-      applyQuizResult,
-      clearSession
+      applyQuizResult
     }),
     [
       hydrated,
-      authenticated,
       loadingAccount,
       accountError,
       plants,
@@ -356,11 +315,10 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       addTransaction,
       setRiskProfile,
       dismissCelebration,
-      resetGarden,
+      resetLocalDemoData,
       loginDemo,
       refreshAccount,
-      applyQuizResult,
-      clearSession
+      applyQuizResult
     ]
   );
 

@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel
 
 from app.models.plant import Plant
 
@@ -16,14 +16,6 @@ class PlantRead(BaseModel):
     sunlight: int
     fertilizer: int
     unlocked: bool
-
-
-class PlantGrowRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    sunlight: int = Field(default=0, ge=0)
-    water: int = Field(default=0, ge=0)
-    fertilizer: int = Field(default=0, ge=0)
 
 
 def plant_read_from_model(plant: Plant) -> PlantRead:

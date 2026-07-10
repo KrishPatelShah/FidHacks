@@ -18,9 +18,19 @@ class QuizAttemptCreate(BaseModel):
     answers: dict[str, int]
 
 
+class QuizQuestionResultRead(BaseModel):
+    id: str
+    correct: bool
+    correct_index: int
+    explanation: str
+
+
 class QuizAttemptRead(BaseModel):
     score: int
     passed: bool
+    question_results: list[QuizQuestionResultRead]
     earned: dict[str, int]
     updated_plant: PlantRead | None = None
     profile: ProfileRead
+    lessons_completed: int
+    quizzes_passed: int

@@ -62,7 +62,8 @@ export default function QuizScreen() {
       {questions.map((question, questionIndex) => {
         const selectedAnswer = answers[question.id];
         const answered = selectedAnswer !== undefined;
-        const correct = result?.passed === true;
+        const questionResult = result?.questionResults.find((item) => item.id === question.id);
+        const correct = questionResult?.correct === true;
 
         return (
           <View key={question.id} style={styles.card}>
@@ -71,15 +72,27 @@ export default function QuizScreen() {
             {question.options.map((option, index) => {
               const selected = selectedAnswer === index;
               return (
-                <TouchableOpacity key={option} onPress={() => setAnswers((current) => ({ ...current, [question.id]: index }))} style={[styles.option, selected && styles.optionSelected]}>
-                  <Text style={[styles.optionText, selected && styles.optionTextSelected]}>{option}</Text>
+                <TouchableOpacity
+                  disabled={Boolean(result)}
+                  key={option}
+                  onPress={() => setAnswers((current) => ({ ...current, [question.id]: index }))}
+                  style={[
+                    styles.option,
+                    selected && styles.optionSelected,
+                    questionResult && index === questionResult.correctIndex && styles.optionCorrect,
+                    questionResult && selected && !correct && styles.optionIncorrect
+                  ]}
+                >
+                  <Text style={[styles.optionText, selected && !questionResult && styles.optionTextSelected]}>{option}</Text>
                 </TouchableOpacity>
               );
             })}
             {answered && result ? (
               <View style={[styles.feedback, correct ? styles.goodFeedback : styles.tryFeedback]}>
                 <Ionicons color={correct ? colors.deepGreen : colors.softOrange} name={correct ? "checkmark-circle" : "bulb"} size={18} />
-                <Text style={styles.feedbackText}>{correct ? "Nice. You passed this knowledge check." : "Not quite this time. Review the lesson and try again."}</Text>
+                <Text style={styles.feedbackText}>
+                  {correct ? "Correct. " : "Not quite. "}{questionResult?.explanation ?? question.explanation ?? "Review this answer and try again."}
+                </Text>
               </View>
             ) : null}
           </View>
@@ -177,6 +190,14 @@ const styles = StyleSheet.create({
   optionSelected: {
     backgroundColor: colors.deepGreen,
     borderColor: colors.deepGreen
+  },
+  optionCorrect: {
+    backgroundColor: "#E8F7F0",
+    borderColor: colors.deepGreen
+  },
+  optionIncorrect: {
+    backgroundColor: "#FFF4CB",
+    borderColor: colors.softOrange
   },
   optionText: {
     color: colors.darkText,

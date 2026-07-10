@@ -34,6 +34,30 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("user_id", "lesson_id", name="uq_lesson_progress_user_lesson"),
     )
+
+    # Earlier API versions appended questionnaire submissions. Keep exactly one
+    # response per user before enforcing the new upsert invariant, preferring the
+    # newest timestamp and then the greatest UUID as a deterministic tie-breaker.
+    op.execute(
+        sa.text(
+            """
+            DELETE FROM questionnaire_responses
+            WHERE id IN (
+                SELECT id
+                FROM (
+                    SELECT
+                        id,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY user_id
+                            ORDER BY created_at DESC, id DESC
+                        ) AS response_rank
+                    FROM questionnaire_responses
+                ) AS ranked_responses
+                WHERE response_rank > 1
+            )
+            """
+        )
+    )
     with op.batch_alter_table("questionnaire_responses") as batch_op:
         batch_op.create_unique_constraint("uq_questionnaire_responses_user", ["user_id"])
 

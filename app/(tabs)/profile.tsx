@@ -19,7 +19,7 @@ export default function ProfileScreen() {
     investmentsPlanted,
     riskProfile,
     unlockedAchievements,
-    resetGarden
+    resetLocalDemoData
   } = useGarden();
 
   const metrics: Record<AchievementMetric, number> = {
@@ -115,8 +115,8 @@ export default function ProfileScreen() {
         <Text style={styles.copy}>Missing a day pauses growth. It never kills the garden or resets learning progress.</Text>
       </View>
 
-      <TouchableOpacity onPress={resetGarden} style={styles.reset}>
-        <Text style={styles.resetText}>Reset Garden (demo)</Text>
+      <TouchableOpacity onPress={resetLocalDemoData} style={styles.reset}>
+        <Text style={styles.resetText}>Reset local demo data</Text>
       </TouchableOpacity>
     </ScrollView>
   );

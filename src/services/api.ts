@@ -34,7 +34,31 @@ type ApiProfile = {
   garden_visibility?: UserProfile["gardenVisibility"];
 };
 
+type ApiQuizQuestionResult = {
+  id: string;
+  correct: boolean;
+  correct_index: number;
+  explanation?: string | null;
+};
+
+type ApiQuizAttempt = {
+  score: number;
+  passed: boolean;
+  earned?: { sunlight?: number; water?: number; fertilizer?: number };
+  updated_plant?: ApiPlant | null;
+  profile?: ApiProfile;
+  lessons_completed?: number;
+  quizzes_passed?: number;
+  question_results?: ApiQuizQuestionResult[];
+};
+
 export type QuizQuestion = { id: string; prompt: string; options: string[]; explanation?: string };
+export type QuizQuestionResult = {
+  id: string;
+  correct: boolean;
+  correctIndex: number;
+  explanation?: string;
+};
 export type QuizAttemptResult = {
   score: number;
   passed: boolean;
@@ -43,6 +67,7 @@ export type QuizAttemptResult = {
   profile?: UserProfile;
   lessonsCompleted?: number;
   quizzesPassed?: number;
+  questionResults: QuizQuestionResult[];
 };
 
 export type Bootstrap = {
@@ -172,16 +197,22 @@ export async function getQuizQuestions(lessonId: string) {
 }
 
 export async function submitQuizAttempt(lessonId: string, answers: Record<string, number>): Promise<QuizAttemptResult> {
-  const result = await request<any>(`/api/quizzes/${encodeURIComponent(lessonId)}/attempts`, {
+  const result = await request<ApiQuizAttempt>(`/api/quizzes/${encodeURIComponent(lessonId)}/attempts`, {
     method: "POST", body: JSON.stringify({ answers })
   }, true);
   return {
     score: result.score,
     passed: result.passed,
     earned: result.earned ?? {},
-    plant: (result.plant ?? result.updated_plant) ? mapPlant(result.plant ?? result.updated_plant) : undefined,
+    plant: result.updated_plant ? mapPlant(result.updated_plant) : undefined,
     profile: result.profile ? mapProfile(result.profile) : undefined,
     lessonsCompleted: result.lessons_completed,
-    quizzesPassed: result.quizzes_passed
+    quizzesPassed: result.quizzes_passed,
+    questionResults: (result.question_results ?? []).map((question) => ({
+      id: String(question.id),
+      correct: Boolean(question.correct),
+      correctIndex: question.correct_index,
+      explanation: question.explanation ?? undefined
+    }))
   };
 }

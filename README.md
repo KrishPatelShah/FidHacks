@@ -55,3 +55,5 @@ npm run typecheck
 Users begin with a small garden and expand it through approachable financial education. Learning areas include budgeting, saving, credit and debt, retirement, career money and taxes, and investment fundamentals. The Sunflower companion offers educational explanations, not personalized financial advice.
 
 The project currently uses a demo-authentication flow for hackathon development. Production authentication and other integrations will be added behind FastAPI rather than directly from the Expo client.
+
+The product requirements, feature priorities, privacy rules, and intended demo journey are documented in [`docs/product-spec.md`](docs/product-spec.md).

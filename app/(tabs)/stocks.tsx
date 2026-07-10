@@ -17,7 +17,7 @@ const ladder = [
 ];
 
 export default function StocksScreen() {
-  const { riskProfile, plantInvestment, plants } = useGarden();
+  const { riskProfile, plantInvestment, investmentsPlanted } = useGarden();
   const [range, setRange] = useState<TimeRange>("1M");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [planted, setPlanted] = useState<Record<string, boolean>>({});
@@ -118,7 +118,7 @@ export default function StocksScreen() {
 
       <View style={styles.disclaimer}>
         <Text style={styles.disclaimerTitle}>Simulated & educational only</Text>
-        <Text style={styles.disclaimerCopy}>Prices and picks are mock data for learning. This is not investment advice. Planting grows an educational flower, not a real position.</Text>
+        <Text style={styles.disclaimerCopy}>Prices and picks are mock data for learning. This is not investment advice. Planting records a local simulation, not a real position or server garden reward.</Text>
       </View>
 
       <View style={styles.ladderCard}>
@@ -143,7 +143,7 @@ export default function StocksScreen() {
         </TouchableOpacity>
       </Link>
 
-      <Text style={styles.footNote}>You have {plants.filter((p) => ["cash", "bonds", "funds", "stocks"].includes(p.type)).reduce((s, p) => s + p.quantity, 0)} investment flowers growing.</Text>
+      <Text style={styles.footNote}>You have planted {investmentsPlanted} simulated investment pick{investmentsPlanted === 1 ? "" : "s"} locally.</Text>
     </ScrollView>
   );
 }

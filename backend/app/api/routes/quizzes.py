@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_profile
@@ -13,7 +13,7 @@ from app.models.quiz import QuizAttempt, QuizQuestion
 from app.models.user import Profile
 from app.schemas.plant import plant_read_from_model
 from app.schemas.profile import ProfileRead
-from app.schemas.quiz import QuizAttemptCreate, QuizAttemptRead, QuizQuestionRead
+from app.schemas.quiz import QuizAttemptCreate, QuizAttemptRead, QuizQuestionRead, QuizQuestionResultRead
 from app.services.garden_growth import apply_reward
 
 router = APIRouter()
@@ -43,7 +43,16 @@ def create_quiz_attempt(
     if not questions:
         raise HTTPException(status_code=404, detail="Quiz not found")
 
-    correct = sum(1 for question in questions if payload.answers.get(question.slug) == question.correct_index)
+    question_results = [
+        QuizQuestionResultRead(
+            id=question.slug,
+            correct=payload.answers.get(question.slug) == question.correct_index,
+            correct_index=question.correct_index,
+            explanation=question.explanation,
+        )
+        for question in questions
+    ]
+    correct = sum(result.correct for result in question_results)
     passed = correct == len(questions)
     attempt = QuizAttempt(user_id=current_profile.id, lesson_id=lesson.id, score=correct, passed=passed)
     db.add(attempt)
@@ -69,9 +78,22 @@ def create_quiz_attempt(
         updated_plant = plant
 
     db.commit()
+    lessons_completed = db.scalar(
+        select(func.count(LessonProgress.id)).where(
+            LessonProgress.user_id == current_profile.id,
+            LessonProgress.completed_at.is_not(None),
+        )
+    )
+    quizzes_passed = db.scalar(
+        select(func.count(LessonProgress.id)).where(
+            LessonProgress.user_id == current_profile.id,
+            LessonProgress.passed_at.is_not(None),
+        )
+    )
     return QuizAttemptRead(
         score=correct,
         passed=passed,
+        question_results=question_results,
         earned=earned,
         updated_plant=plant_read_from_model(updated_plant) if updated_plant else None,
         profile=ProfileRead(
@@ -82,4 +104,6 @@ def create_quiz_attempt(
             current_path=current_profile.current_path,
             garden_visibility=current_profile.garden_visibility,
         ),
+        lessons_completed=lessons_completed or 0,
+        quizzes_passed=quizzes_passed or 0,
     )

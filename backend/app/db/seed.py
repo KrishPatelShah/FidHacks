@@ -133,7 +133,7 @@ MODULES = [
         "id": UUID("20000000-0000-0000-0000-000000000004"),
         "slug": "module_retirement",
         "category": "retirement",
-        "flower_name": "Purple Tulip",
+        "flower_name": "Orchid",
         "title": "Retirement Basics",
         "sort_order": 4,
         "lessons": [
@@ -165,7 +165,7 @@ MODULES = [
         "id": UUID("20000000-0000-0000-0000-000000000005"),
         "slug": "module_investing",
         "category": "funds",
-        "flower_name": "Orchid",
+        "flower_name": "Purple Tulip",
         "title": "Investing Foundations",
         "sort_order": 5,
         "lessons": [
@@ -247,7 +247,7 @@ PLANTS = [
     {
         "id": UUID("10000000-0000-0000-0000-000000000005"),
         "type": "funds",
-        "flower_name": "Orchid",
+        "flower_name": "Purple Tulip",
         "stage": 1,
         "growth": 0,
         "quantity": 1,

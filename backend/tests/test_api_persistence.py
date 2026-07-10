@@ -125,6 +125,9 @@ async def test_profile_bootstrap_returns_authenticated_profile_plants_and_progre
     assert body["profile"]["id"] == str(DEMO_USER_ID)
     assert body["profile"]["display_name"] == "Demo Gardener"
     assert len(body["plants"]) == 5
+    flowers_by_type = {plant["type"]: plant["flower_name"] for plant in body["plants"]}
+    assert flowers_by_type["retirement"] == "Orchid"
+    assert flowers_by_type["funds"] == "Purple Tulip"
     assert body["lesson_progress"] == []
     assert body["lessons_completed"] == 0
     assert body["quizzes_passed"] == 0
@@ -137,8 +140,12 @@ async def test_lessons_and_quizzes_are_available_by_slug(client: AsyncClient) ->
     quiz = await client.get("/api/quizzes/budgeting-expected-actual")
 
     assert modules.status_code == 200
-    assert modules.json()[0]["id"] == "module_budgeting"
-    assert modules.json()[0]["lessons"][0]["id"] == "budgeting-expected-actual"
+    module_body = modules.json()
+    assert module_body[0]["id"] == "module_budgeting"
+    assert module_body[0]["lessons"][0]["id"] == "budgeting-expected-actual"
+    flowers_by_module = {module["id"]: module["flower_name"] for module in module_body}
+    assert flowers_by_module["module_retirement"] == "Orchid"
+    assert flowers_by_module["module_investing"] == "Purple Tulip"
 
     assert lesson.status_code == 200
     assert lesson.json()["id"] == "budgeting-expected-actual"
@@ -175,11 +182,27 @@ async def test_quiz_attempt_is_scored_and_persisted(
     body = response.json()
     assert body["score"] == 2
     assert body["passed"] is True
+    assert body["question_results"] == [
+        {
+            "id": "budgeting-expected-actual-q1",
+            "correct": True,
+            "correct_index": 1,
+            "explanation": "The gap is a learning signal. It helps explain what changed.",
+        },
+        {
+            "id": "budgeting-expected-actual-q2",
+            "correct": True,
+            "correct_index": 0,
+            "explanation": "Budget logging is a practice habit, so it earns fertilizer.",
+        },
+    ]
     assert body["earned"] == {"sunlight": 1, "water": 1}
     assert body["updated_plant"]["growth"] == 0
     assert body["updated_plant"]["quantity"] == before_quantity + 1
     assert body["updated_plant"]["stage"] == before_stage + 1
     assert body["profile"]["id"] == str(DEMO_USER_ID)
+    assert body["lessons_completed"] == 1
+    assert body["quizzes_passed"] == 1
 
     attempts = db_session.scalars(select(QuizAttempt).where(QuizAttempt.user_id == DEMO_USER_ID)).all()
     assert len(attempts) == 1
@@ -194,6 +217,8 @@ async def test_quiz_attempt_is_scored_and_persisted(
     assert repeated.status_code == 200
     assert repeated.json()["earned"] == {}
     assert repeated.json()["updated_plant"] is None
+    assert repeated.json()["lessons_completed"] == 1
+    assert repeated.json()["quizzes_passed"] == 1
 
 
 @pytest.mark.anyio
@@ -212,6 +237,9 @@ async def test_failed_quiz_records_progress_without_awarding_resources(
     )
     assert response.status_code == 200
     assert response.json()["passed"] is False
+    assert [result["correct"] for result in response.json()["question_results"]] == [False, False]
+    assert response.json()["lessons_completed"] == 1
+    assert response.json()["quizzes_passed"] == 0
     assert response.json()["earned"] == {}
     assert response.json()["updated_plant"] is None
     db_session.refresh(plant)

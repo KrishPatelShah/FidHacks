@@ -44,23 +44,6 @@ export type UserProfile = {
   gardenVisibility: "private" | "friends" | "public";
 };
 
-export type BudgetCategory =
-  | "savings_investments"
-  | "living_expenses"
-  | "education_career"
-  | "lifestyle"
-  | "debt"
-  | "taxes";
-
-export type BudgetEntry = {
-  id: string;
-  userId: string;
-  category: BudgetCategory;
-  expectedAmount: number;
-  actualAmount: number;
-  month: string;
-};
-
 export type Lesson = {
   id: string;
   category: PlantCategory;

@@ -1,129 +1,227 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { ParsedReceipt, Plant, PlantCategory } from "@/types/domain";
+import { LearningModule, Lesson, ParsedReceipt, Plant, UserProfile } from "@/types/domain";
 
-// Base URL of the FastAPI backend. Configure with EXPO_PUBLIC_API_URL in .env.
-// Defaults to the local Docker backend (works from the iOS simulator).
-export const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8000/api").replace(/\/$/, "");
+const TOKEN_KEY = "financial_garden_access_token";
+const apiUrl = (process.env.EXPO_PUBLIC_API_URL ?? "").replace(/\/$/, "");
 
-const TOKEN_KEY = "financial_garden_token_v1";
-const DEFAULT_TIMEOUT_MS = 8000;
-
-let cachedToken: string | null = null;
-
-async function request<T>(path: string, options: RequestInit = {}, auth = false, timeoutMs = DEFAULT_TIMEOUT_MS): Promise<T> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const headers: Record<string, string> = { "Content-Type": "application/json", ...(options.headers as Record<string, string>) };
-    if (auth) {
-      const token = await ensureToken();
-      if (token) headers.Authorization = `Bearer ${token}`;
-    }
-    const response = await fetch(`${API_URL}${path}`, { ...options, headers, signal: controller.signal });
-    if (!response.ok) {
-      throw new Error(`Request failed: ${response.status}`);
-    }
-    return (await response.json()) as T;
-  } finally {
-    clearTimeout(timeout);
+export class ApiError extends Error {
+  constructor(message: string, public readonly status?: number) {
+    super(message);
+    this.name = "ApiError";
   }
 }
 
-/** Log in as the demo user and cache the bearer token. */
-export async function ensureToken(): Promise<string | null> {
-  if (cachedToken) return cachedToken;
-  try {
-    const stored = await AsyncStorage.getItem(TOKEN_KEY);
-    if (stored) {
-      cachedToken = stored;
-      return stored;
-    }
-  } catch {
-    // ignore
-  }
-  try {
-    const data = await request<{ access_token: string }>("/auth/demo", { method: "POST" });
-    cachedToken = data.access_token;
-    await AsyncStorage.setItem(TOKEN_KEY, data.access_token).catch(() => {});
-    return cachedToken;
-  } catch {
-    return null;
-  }
-}
-
-export async function checkHealth(): Promise<boolean> {
-  try {
-    await request("/health", { method: "GET" });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-type BackendPlant = {
-  id: string;
-  type: string;
+type ApiPlant = Omit<Plant, "userId" | "flowerName" | "createdAt" | "updatedAt"> & {
   flower_name: string;
-  stage: number;
-  growth: number;
-  quantity: number;
-  water: number;
-  sunlight: number;
-  fertilizer: number;
-  unlocked: boolean;
 };
 
-function mapPlant(p: BackendPlant): Plant {
+type ApiLesson = Omit<Lesson, "contentType" | "sourceUrl"> & {
+  content_type: Lesson["contentType"];
+  source_url?: string | null;
+};
+
+type ApiModule = Omit<LearningModule, "flowerName" | "lessons"> & {
+  flower_name: string;
+  lessons: ApiLesson[];
+};
+
+type ApiProfile = {
+  id: string;
+  display_name: string;
+  streak_count: number;
+  last_activity_date?: string | null;
+  current_path: UserProfile["currentPath"];
+  garden_visibility?: UserProfile["gardenVisibility"];
+};
+
+type ApiQuizQuestionResult = {
+  id: string;
+  correct: boolean;
+  correct_index: number;
+  explanation?: string | null;
+};
+
+type ApiQuizAttempt = {
+  score: number;
+  passed: boolean;
+  earned?: { sunlight?: number; water?: number; fertilizer?: number };
+  updated_plant?: ApiPlant | null;
+  profile?: ApiProfile;
+  lessons_completed?: number;
+  quizzes_passed?: number;
+  question_results?: ApiQuizQuestionResult[];
+};
+
+export type QuizQuestion = { id: string; prompt: string; options: string[]; explanation?: string };
+export type QuizQuestionResult = {
+  id: string;
+  correct: boolean;
+  correctIndex: number;
+  explanation?: string;
+};
+export type QuizAttemptResult = {
+  score: number;
+  passed: boolean;
+  earned: { sunlight?: number; water?: number; fertilizer?: number };
+  plant?: Plant;
+  profile?: UserProfile;
+  lessonsCompleted?: number;
+  quizzesPassed?: number;
+  questionResults: QuizQuestionResult[];
+};
+
+export type Bootstrap = {
+  profile: UserProfile;
+  plants: Plant[];
+  lessonsCompleted: number;
+  quizzesPassed: number;
+};
+
+function assertConfigured() {
+  if (!apiUrl) throw new ApiError("Missing EXPO_PUBLIC_API_URL. Set it to your FastAPI server URL.");
+}
+
+async function request<T>(path: string, init: RequestInit = {}, authenticated = false): Promise<T> {
+  assertConfigured();
+  const token = authenticated ? await getAccessToken() : null;
+  const response = await fetch(`${apiUrl}${path}`, {
+    ...init,
+    headers: {
+      Accept: "application/json",
+      ...(init.body ? { "Content-Type": "application/json" } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...init.headers
+    }
+  });
+  if (!response.ok) {
+    let message = "Something went wrong. Please try again.";
+    try {
+      const body = (await response.json()) as { detail?: string };
+      if (body.detail) message = body.detail;
+    } catch {}
+    throw new ApiError(message, response.status);
+  }
+  return response.json() as Promise<T>;
+}
+
+function mapPlant(plant: ApiPlant): Plant {
   const now = new Date().toISOString();
   return {
-    id: p.id,
-    userId: "demo_user",
-    type: p.type as PlantCategory,
-    flowerName: p.flower_name,
-    stage: p.stage,
-    growth: p.growth,
-    quantity: p.quantity,
-    water: p.water,
-    sunlight: p.sunlight,
-    fertilizer: p.fertilizer,
-    unlocked: p.unlocked,
+    ...plant,
+    id: String(plant.id),
+    userId: "current-user",
+    flowerName: plant.flower_name,
     createdAt: now,
     updatedAt: now
   };
 }
 
-/** Fetch the demo user's plants from Postgres via FastAPI. Returns null on failure. */
-export async function fetchPlants(): Promise<Plant[] | null> {
-  try {
-    const data = await request<BackendPlant[]>("/plants", { method: "GET" }, true);
-    return data.map(mapPlant);
-  } catch {
-    return null;
-  }
+function mapProfile(profile: ApiProfile): UserProfile {
+  return {
+    id: String(profile.id),
+    displayName: profile.display_name,
+    streakCount: profile.streak_count ?? 0,
+    lastActivityDate: profile.last_activity_date ?? "",
+    currentPath: profile.current_path ?? "beginner",
+    gardenVisibility: profile.garden_visibility ?? "private"
+  };
 }
 
-/** Persist a growth event to the backend (best-effort; ignores failure). */
-export async function growPlantRemote(
-  plantId: string,
-  reward: { sunlight?: number; water?: number; fertilizer?: number }
-): Promise<void> {
-  try {
-    await request(
-      `/plants/${plantId}/grow`,
-      {
-        method: "POST",
-        body: JSON.stringify({
-          sunlight: reward.sunlight ?? 0,
-          water: reward.water ?? 0,
-          fertilizer: reward.fertilizer ?? 0
-        })
-      },
-      true
-    );
-  } catch {
-    // best-effort only
-  }
+function mapLesson(lesson: ApiLesson): Lesson {
+  return { ...lesson, id: String(lesson.id), contentType: lesson.content_type, sourceUrl: lesson.source_url ?? undefined };
 }
+
+function mapModule(module: ApiModule): LearningModule {
+  return { ...module, id: String(module.id), flowerName: module.flower_name, lessons: module.lessons.map(mapLesson) };
+}
+
+export async function getAccessToken() {
+  return AsyncStorage.getItem(TOKEN_KEY);
+}
+
+export async function clearAccessToken() {
+  await AsyncStorage.removeItem(TOKEN_KEY);
+}
+
+export async function demoLogin() {
+  const response = await request<{ access_token: string }>("/api/auth/demo", { method: "POST" });
+  await AsyncStorage.setItem(TOKEN_KEY, response.access_token);
+  return response.access_token;
+}
+
+export async function getBootstrap(): Promise<Bootstrap> {
+  const result = await request<{
+    profile: ApiProfile;
+    plants: ApiPlant[];
+    lessons_completed?: number;
+    quizzes_passed?: number;
+  }>("/api/profile", {}, true);
+  return {
+    profile: mapProfile(result.profile),
+    plants: result.plants.map(mapPlant),
+    lessonsCompleted: result.lessons_completed ?? 0,
+    quizzesPassed: result.quizzes_passed ?? 0
+  };
+}
+
+export async function submitQuestionnaire(ratings: Record<string, number>, primaryGoal = "build_financial_confidence") {
+  return request<{ recommended_path: UserProfile["currentPath"] }>(
+    "/api/questionnaire",
+    { method: "POST", body: JSON.stringify({
+      budgeting_confidence: ratings.budgetingConfidence ?? 1,
+      savings_confidence: ratings.savingsConfidence ?? 1,
+      credit_debt_confidence: ratings.creditDebtConfidence ?? 1,
+      retirement_confidence: ratings.retirementConfidence ?? 1,
+      career_taxes_confidence: ratings.careerTaxesConfidence ?? 1,
+      investing_confidence: ratings.investingConfidence ?? 1,
+      primary_goal: primaryGoal
+    }) },
+    true
+  );
+}
+
+export async function getLearningModules() {
+  return (await request<ApiModule[]>("/api/lessons")).map(mapModule);
+}
+
+export async function getLesson(id: string) {
+  return mapLesson(await request<ApiLesson>(`/api/lessons/${encodeURIComponent(id)}`));
+}
+
+export async function completeLesson(id: string) {
+  return request<{ lessons_completed?: number }>(`/api/lessons/${encodeURIComponent(id)}/complete`, { method: "POST" }, true);
+}
+
+export async function getQuizQuestions(lessonId: string) {
+  return request<QuizQuestion[]>(`/api/quizzes/${encodeURIComponent(lessonId)}`);
+}
+
+export async function submitQuizAttempt(lessonId: string, answers: Record<string, number>): Promise<QuizAttemptResult> {
+  const result = await request<ApiQuizAttempt>(`/api/quizzes/${encodeURIComponent(lessonId)}/attempts`, {
+    method: "POST", body: JSON.stringify({ answers })
+  }, true);
+  return {
+    score: result.score,
+    passed: result.passed,
+    earned: result.earned ?? {},
+    plant: result.updated_plant ? mapPlant(result.updated_plant) : undefined,
+    profile: result.profile ? mapProfile(result.profile) : undefined,
+    lessonsCompleted: result.lessons_completed,
+    quizzesPassed: result.quizzes_passed,
+    questionResults: (result.question_results ?? []).map((question) => ({
+      id: String(question.id),
+      correct: Boolean(question.correct),
+      correctIndex: question.correct_index,
+      explanation: question.explanation ?? undefined
+    }))
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Additive helpers (receipt scanning, questionnaire persistence, Sunflower).
+// These are best-effort: they never throw, so demo-only features keep working
+// even when the backend is unreachable or EXPO_PUBLIC_API_URL is unset.
+// ---------------------------------------------------------------------------
 
 export type QuestionnairePayload = {
   budgeting_confidence: number;
@@ -135,19 +233,17 @@ export type QuestionnairePayload = {
   primary_goal: string;
 };
 
-/** Persist questionnaire results to the backend (best-effort). */
 export async function submitQuestionnaireRemote(payload: QuestionnairePayload): Promise<void> {
   try {
-    await request("/questionnaire", { method: "POST", body: JSON.stringify(payload) }, true);
+    await request("/api/questionnaire", { method: "POST", body: JSON.stringify(payload) }, true);
   } catch {
     // best-effort only
   }
 }
 
-/** Ask the Sunflower tutor via the backend. Returns null on failure so callers can fall back. */
 export async function askSunflowerRemote(question: string): Promise<string | null> {
   try {
-    const data = await request<{ answer: string }>("/sunflower/ask", {
+    const data = await request<{ answer: string }>("/api/sunflower/ask", {
       method: "POST",
       body: JSON.stringify({ question })
     });
@@ -159,15 +255,12 @@ export async function askSunflowerRemote(question: string): Promise<string | nul
 
 export type RemoteScanResult = ParsedReceipt & { source: "gemini" | "fallback" };
 
-/** Send a receipt image to the backend (which calls Gemini). Returns null on failure. */
 export async function scanReceiptRemote(imageBase64: string, mimeType = "image/jpeg"): Promise<RemoteScanResult | null> {
   try {
-    const data = await request<RemoteScanResult & { image?: never }>(
-      "/receipts/scan",
-      { method: "POST", body: JSON.stringify({ image_base64: imageBase64, mime_type: mimeType }) },
-      false,
-      20000
-    );
+    const data = await request<RemoteScanResult>("/api/receipts/scan", {
+      method: "POST",
+      body: JSON.stringify({ image_base64: imageBase64, mime_type: mimeType })
+    });
     if (!data || !Array.isArray(data.items) || data.items.length === 0) return null;
     return data;
   } catch {

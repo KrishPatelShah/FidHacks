@@ -1,12 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
+import { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { FlowerIcon } from "@/components/FlowerIcon";
-import { learningModules } from "@/data/lessons";
 import { difficultyUnlocked } from "@/lib/levels";
+import { getLearningModules } from "@/services/api";
 import { useGarden } from "@/state/garden";
 import { colors, shadow } from "@/theme/colors";
-import { ExperienceLevel } from "@/types/domain";
+import { ExperienceLevel, LearningModule } from "@/types/domain";
 
 const moduleDetails: Record<string, { topics: string; progress: number; completed: string; reward: string; difficulty: string; flower: string; accent: string }> = {
   budgeting: {
@@ -67,6 +68,16 @@ const moduleDetails: Record<string, { topics: string; progress: number; complete
 
 export default function LearningPathScreen() {
   const { experienceLevel } = useGarden();
+  const [modules, setModules] = useState<LearningModule[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getLearningModules()
+      .then(setModules)
+      .catch((cause) => setError(cause instanceof Error ? cause.message : "Could not load lessons."))
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <ScrollView contentContainerStyle={styles.screen}>
@@ -75,7 +86,10 @@ export default function LearningPathScreen() {
         <Text style={styles.subtitle}>Complete lessons to unlock new flowers.</Text>
       </View>
 
-      {learningModules.map((module) => {
+      {loading ? <Text style={styles.status}>Loading learning path...</Text> : null}
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+
+      {modules.map((module) => {
         const detail = moduleDetails[module.category] ?? moduleDetails.budgeting;
         const firstLesson = module.lessons[0];
         const difficulty = detail.difficulty.toLowerCase() as ExperienceLevel;
@@ -125,6 +139,8 @@ export default function LearningPathScreen() {
           );
         }
 
+        if (!firstLesson) return null;
+
         return (
           <Link key={module.id} href={`/lesson/${firstLesson.id}`} asChild>
             <TouchableOpacity style={styles.module}>{body}</TouchableOpacity>
@@ -158,6 +174,15 @@ const styles = StyleSheet.create({
     color: colors.mutedText,
     fontSize: 16,
     lineHeight: 23
+  },
+  status: {
+    color: colors.mutedText,
+    fontSize: 15
+  },
+  error: {
+    color: "#B42318",
+    fontSize: 14,
+    lineHeight: 20
   },
   module: {
     backgroundColor: colors.card,

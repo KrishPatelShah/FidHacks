@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_profile
@@ -18,12 +19,18 @@ def create_questionnaire_response(
     current_profile: Profile = Depends(get_current_profile),
 ) -> QuestionnaireResponse:
     recommended_path = recommend_path(payload)
-    db_response = QuestionnaireResponseModel(
-        user_id=current_profile.id,
-        recommended_path=recommended_path,
-        **payload.model_dump(),
-    )
-    db.add(db_response)
+    db_response = db.scalar(select(QuestionnaireResponseModel).where(QuestionnaireResponseModel.user_id == current_profile.id))
+    if db_response is None:
+        db_response = QuestionnaireResponseModel(
+            user_id=current_profile.id,
+            recommended_path=recommended_path,
+            **payload.model_dump(),
+        )
+        db.add(db_response)
+    else:
+        for field, value in payload.model_dump().items():
+            setattr(db_response, field, value)
+        db_response.recommended_path = recommended_path
     current_profile.current_path = recommended_path
     db.commit()
     return QuestionnaireResponse(**payload.model_dump(), recommended_path=recommended_path)

@@ -1,35 +1,50 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { BackButton } from "@/components/BackButton";
 import { FlowerIcon } from "@/components/FlowerIcon";
 import { PrimaryButton } from "@/components/PrimaryButton";
-import { findLesson } from "@/data/lessons";
-import { quizQuestions } from "@/data/quizzes";
-import { GrowthResult, useGarden } from "@/state/garden";
+import { getQuizQuestions, QuizAttemptResult, QuizQuestion, submitQuizAttempt } from "@/services/api";
+import { useGarden } from "@/state/garden";
 import { colors, shadow } from "@/theme/colors";
 
 export default function QuizScreen() {
   const { lessonId } = useLocalSearchParams<{ lessonId: string }>();
-  const { passQuiz } = useGarden();
-  const questions = quizQuestions[lessonId] ?? quizQuestions.default;
+  const { applyQuizResult } = useGarden();
+  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [answers, setAnswers] = useState<Record<string, number>>({});
-  const [result, setResult] = useState<GrowthResult | null>(null);
-  const awarded = useRef(false);
-  const passed = questions.every((question) => answers[question.id] === question.correctIndex);
-  const category = findLesson(lessonId)?.category ?? "budgeting";
-  const rewardFlower = findLesson(lessonId)?.category === "credit_debt" ? "Rose" : "Daisy";
+  const [result, setResult] = useState<QuizAttemptResult | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const complete = questions.length > 0 && questions.every((question) => answers[question.id] !== undefined);
+  const passed = result?.passed ?? false;
 
   useEffect(() => {
-    if (passed && !awarded.current) {
-      awarded.current = true;
-      setResult(passQuiz(category));
+    if (!lessonId) return;
+    getQuizQuestions(lessonId)
+      .then(setQuestions)
+      .catch((cause) => setError(cause instanceof Error ? cause.message : "Could not load this quiz."))
+      .finally(() => setLoading(false));
+  }, [lessonId]);
+
+  async function submit() {
+    if (!complete || submitting) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const attempt = await submitQuizAttempt(lessonId, answers);
+      setResult(attempt);
+      applyQuizResult(attempt);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not submit your quiz. Please try again.");
+    } finally {
+      setSubmitting(false);
     }
-  }, [passed, passQuiz, category]);
+  }
 
   function retry() {
-    awarded.current = false;
     setResult(null);
     setAnswers({});
   }
@@ -44,10 +59,14 @@ export default function QuizScreen() {
         <Text style={styles.subtitle}>Answer, learn from feedback, and retry anytime.</Text>
       </View>
 
+      {loading ? <Text style={styles.status}>Loading quiz...</Text> : null}
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+
       {questions.map((question, questionIndex) => {
         const selectedAnswer = answers[question.id];
         const answered = selectedAnswer !== undefined;
-        const correct = selectedAnswer === question.correctIndex;
+        const questionResult = result?.questionResults.find((item) => item.id === question.id);
+        const correct = questionResult?.correct === true;
 
         return (
           <View key={question.id} style={styles.card}>
@@ -56,15 +75,27 @@ export default function QuizScreen() {
             {question.options.map((option, index) => {
               const selected = selectedAnswer === index;
               return (
-                <TouchableOpacity key={option} onPress={() => setAnswers((current) => ({ ...current, [question.id]: index }))} style={[styles.option, selected && styles.optionSelected]}>
-                  <Text style={[styles.optionText, selected && styles.optionTextSelected]}>{option}</Text>
+                <TouchableOpacity
+                  disabled={Boolean(result)}
+                  key={option}
+                  onPress={() => setAnswers((current) => ({ ...current, [question.id]: index }))}
+                  style={[
+                    styles.option,
+                    selected && styles.optionSelected,
+                    questionResult && index === questionResult.correctIndex && styles.optionCorrect,
+                    questionResult && selected && !correct && styles.optionIncorrect
+                  ]}
+                >
+                  <Text style={[styles.optionText, selected && !questionResult && styles.optionTextSelected]}>{option}</Text>
                 </TouchableOpacity>
               );
             })}
-            {answered ? (
+            {answered && result ? (
               <View style={[styles.feedback, correct ? styles.goodFeedback : styles.tryFeedback]}>
                 <Ionicons color={correct ? colors.deepGreen : colors.softOrange} name={correct ? "checkmark-circle" : "bulb"} size={18} />
-                <Text style={styles.feedbackText}>{correct ? "Nice. That answer grows your understanding." : question.explanation}</Text>
+                <Text style={styles.feedbackText}>
+                  {correct ? "Correct. " : "Not quite. "}{questionResult?.explanation ?? question.explanation ?? "Review this answer and try again."}
+                </Text>
               </View>
             ) : null}
           </View>
@@ -72,24 +103,27 @@ export default function QuizScreen() {
       })}
 
       <View style={styles.reward}>
-        <FlowerIcon name={passed ? rewardFlower : "Sunflower"} size={54} />
+          <FlowerIcon name={passed ? result?.plant?.flowerName ?? "Daisy" : "Sunflower"} size={54} />
         <View style={styles.rewardText}>
           <Text style={styles.rewardTitle}>
-            {result?.earnedFlower
-              ? `New ${result.flowerName} grown!`
+            {result?.plant && result.plant.quantity > 0
+              ? `${result.plant.flowerName} progress saved!`
               : passed
                 ? "Passed: +Water earned"
                 : "Pass to earn water"}
           </Text>
           <Text style={styles.rewardCopy}>
-            {result?.earnedFlower
-              ? `You now have ${result.quantity} ${result.flowerName}s in your garden.`
-              : "Passing this quiz grows flower count instead of rewarding dollar amounts."}
+            {result?.plant
+              ? `Your updated garden progress has been saved to the server.`
+              : "Pass to earn a server-verified garden reward."}
           </Text>
         </View>
       </View>
 
-      <PrimaryButton label={passed ? "Return to Garden" : "Retry Quiz"} onPress={() => (passed ? router.replace("/(tabs)/garden") : retry())} />
+      <PrimaryButton
+        label={passed ? "Return to Garden" : result ? "Retry Quiz" : submitting ? "Submitting..." : "Submit Quiz"}
+        onPress={() => (passed ? router.replace("/(tabs)/garden") : result ? retry() : submit())}
+      />
       </ScrollView>
     </View>
   );
@@ -126,6 +160,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 23
   },
+  status: {
+    color: colors.mutedText,
+    fontSize: 15
+  },
+  error: {
+    color: "#B42318",
+    fontSize: 14,
+    lineHeight: 20
+  },
   card: {
     backgroundColor: colors.card,
     borderRadius: 28,
@@ -155,6 +198,14 @@ const styles = StyleSheet.create({
   optionSelected: {
     backgroundColor: colors.deepGreen,
     borderColor: colors.deepGreen
+  },
+  optionCorrect: {
+    backgroundColor: "#E8F7F0",
+    borderColor: colors.deepGreen
+  },
+  optionIncorrect: {
+    backgroundColor: "#FFF4CB",
+    borderColor: colors.softOrange
   },
   optionText: {
     color: colors.darkText,

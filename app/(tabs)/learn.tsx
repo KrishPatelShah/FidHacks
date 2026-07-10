@@ -1,7 +1,9 @@
 import { Link } from "expo-router";
+import { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { FlowerIcon } from "@/components/FlowerIcon";
-import { learningModules } from "@/data/lessons";
+import { getLearningModules } from "@/services/api";
+import { LearningModule } from "@/types/domain";
 import { colors, shadow } from "@/theme/colors";
 
 const moduleDetails: Record<string, { topics: string; progress: number; completed: string; reward: string; difficulty: string; flower: string; accent: string }> = {
@@ -62,6 +64,17 @@ const moduleDetails: Record<string, { topics: string; progress: number; complete
 };
 
 export default function LearningPathScreen() {
+  const [modules, setModules] = useState<LearningModule[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getLearningModules()
+      .then(setModules)
+      .catch((cause) => setError(cause instanceof Error ? cause.message : "Could not load lessons."))
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
     <ScrollView contentContainerStyle={styles.screen}>
       <View style={styles.header}>
@@ -69,9 +82,14 @@ export default function LearningPathScreen() {
         <Text style={styles.subtitle}>Complete lessons to unlock new flowers.</Text>
       </View>
 
-      {learningModules.map((module) => {
+      {loading ? <Text style={styles.status}>Loading learning path...</Text> : null}
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+
+      {modules.map((module) => {
         const detail = moduleDetails[module.category] ?? moduleDetails.budgeting;
         const firstLesson = module.lessons[0];
+
+        if (!firstLesson) return null;
 
         return (
           <Link key={module.id} href={`/lesson/${firstLesson.id}`} asChild>
@@ -124,6 +142,15 @@ const styles = StyleSheet.create({
     color: colors.mutedText,
     fontSize: 16,
     lineHeight: 23
+  },
+  status: {
+    color: colors.mutedText,
+    fontSize: 15
+  },
+  error: {
+    color: "#B42318",
+    fontSize: 14,
+    lineHeight: 20
   },
   module: {
     backgroundColor: colors.card,

@@ -45,7 +45,7 @@ async def test_protected_routes_reject_missing_and_invalid_bearer_tokens(client:
 
 
 @pytest.mark.anyio
-async def test_questionnaire_response_is_persisted_for_authenticated_user(
+async def test_questionnaire_response_is_upserted_for_authenticated_user(
     client: AsyncClient,
     auth_headers: dict[str, str],
     db_session: Session,
@@ -71,6 +71,12 @@ async def test_questionnaire_response_is_persisted_for_authenticated_user(
     assert saved.primary_goal == payload["primary_goal"]
     assert saved.recommended_path == "advanced"
     assert db_session.get(Profile, DEMO_USER_ID).current_path == "advanced"
+
+    updated = {**payload, "budgeting_confidence": 5, "primary_goal": "Build savings"}
+    second = await client.post("/api/questionnaire", json=updated, headers=auth_headers)
+    assert second.status_code == 200
+    assert db_session.scalars(select(QuestionnaireResponse).where(QuestionnaireResponse.user_id == DEMO_USER_ID)).all()[0].primary_goal == "Build savings"
+    assert len(db_session.scalars(select(QuestionnaireResponse).where(QuestionnaireResponse.user_id == DEMO_USER_ID)).all()) == 1
 
 
 @pytest.mark.anyio
@@ -108,33 +114,20 @@ async def test_budget_entries_persist_and_reject_client_supplied_user_id(
 
 
 @pytest.mark.anyio
-async def test_plant_list_and_grow_changes_are_persisted(
+async def test_profile_bootstrap_returns_authenticated_profile_plants_and_progress(
     client: AsyncClient,
     auth_headers: dict[str, str],
     db_session: Session,
 ) -> None:
-    before = await client.get("/api/plants", headers=auth_headers)
-    assert before.status_code == 200
-    plant_before = before.json()[0]
-
-    grown = await client.post(
-        f"/api/plants/{plant_before['id']}/grow",
-        json={"sunlight": 1, "water": 2, "fertilizer": 1},
-        headers=auth_headers,
-    )
-    after = await client.get("/api/plants", headers=auth_headers)
-
-    assert grown.status_code == 200
-    grown_body = grown.json()
-    assert grown_body["growth"] == min(100, plant_before["growth"] + 45)
-    assert grown_body["sunlight"] == plant_before["sunlight"] + 1
-    assert grown_body["water"] == plant_before["water"] + 2
-    assert grown_body["fertilizer"] == plant_before["fertilizer"] + 1
-    assert after.json()[0] == grown_body
-
-    saved = db_session.get(Plant, UUID(plant_before["id"]))
-    assert saved.growth == grown_body["growth"]
-    assert saved.water == grown_body["water"]
+    response = await client.get("/api/profile", headers=auth_headers)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["profile"]["id"] == str(DEMO_USER_ID)
+    assert body["profile"]["display_name"] == "Demo Gardener"
+    assert len(body["plants"]) == 5
+    assert body["lesson_progress"] == []
+    assert body["lessons_completed"] == 0
+    assert body["quizzes_passed"] == 0
 
 
 @pytest.mark.anyio
@@ -166,6 +159,12 @@ async def test_quiz_attempt_is_scored_and_persisted(
     auth_headers: dict[str, str],
     db_session: Session,
 ) -> None:
+    plant = db_session.scalar(select(Plant).where(Plant.user_id == DEMO_USER_ID, Plant.type == "budgeting"))
+    assert plant is not None
+    plant.growth = 90
+    before_quantity, before_stage = plant.quantity, plant.stage
+    db_session.commit()
+
     response = await client.post(
         "/api/quizzes/budgeting-expected-actual/attempts",
         json={"answers": {"budgeting-expected-actual-q1": 1, "budgeting-expected-actual-q2": 0}},
@@ -173,9 +172,60 @@ async def test_quiz_attempt_is_scored_and_persisted(
     )
 
     assert response.status_code == 200
-    assert response.json() == {"score": 2, "passed": True, "earned": {"sunlight": 1, "water": 1}}
+    body = response.json()
+    assert body["score"] == 2
+    assert body["passed"] is True
+    assert body["earned"] == {"sunlight": 1, "water": 1}
+    assert body["updated_plant"]["growth"] == 0
+    assert body["updated_plant"]["quantity"] == before_quantity + 1
+    assert body["updated_plant"]["stage"] == before_stage + 1
+    assert body["profile"]["id"] == str(DEMO_USER_ID)
 
     attempts = db_session.scalars(select(QuizAttempt).where(QuizAttempt.user_id == DEMO_USER_ID)).all()
     assert len(attempts) == 1
     assert attempts[0].score == 2
     assert attempts[0].passed is True
+
+    repeated = await client.post(
+        "/api/quizzes/budgeting-expected-actual/attempts",
+        json={"answers": {"budgeting-expected-actual-q1": 1, "budgeting-expected-actual-q2": 0}},
+        headers=auth_headers,
+    )
+    assert repeated.status_code == 200
+    assert repeated.json()["earned"] == {}
+    assert repeated.json()["updated_plant"] is None
+
+
+@pytest.mark.anyio
+async def test_failed_quiz_records_progress_without_awarding_resources(
+    client: AsyncClient,
+    auth_headers: dict[str, str],
+    db_session: Session,
+) -> None:
+    plant = db_session.scalar(select(Plant).where(Plant.user_id == DEMO_USER_ID, Plant.type == "budgeting"))
+    assert plant is not None
+    before_growth = plant.growth
+    response = await client.post(
+        "/api/quizzes/budgeting-expected-actual/attempts",
+        json={"answers": {"budgeting-expected-actual-q1": 0, "budgeting-expected-actual-q2": 2}},
+        headers=auth_headers,
+    )
+    assert response.status_code == 200
+    assert response.json()["passed"] is False
+    assert response.json()["earned"] == {}
+    assert response.json()["updated_plant"] is None
+    db_session.refresh(plant)
+    assert plant.growth == before_growth
+
+
+@pytest.mark.anyio
+async def test_lesson_completion_is_persisted_without_awarding_a_reward(
+    client: AsyncClient,
+    auth_headers: dict[str, str],
+) -> None:
+    response = await client.post("/api/lessons/savings-emergency-fund/complete", headers=auth_headers)
+    assert response.status_code == 200
+    assert response.json() == {"lesson_id": "savings-emergency-fund", "completed": True, "passed": False}
+    profile = await client.get("/api/profile", headers=auth_headers)
+    assert profile.status_code == 200
+    assert profile.json()["lesson_progress"] == [{"lesson_id": "savings-emergency-fund", "completed": True, "passed": False}]

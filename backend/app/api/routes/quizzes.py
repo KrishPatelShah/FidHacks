@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -5,9 +7,14 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_profile
 from app.api.lesson_lookup import find_lesson_by_slug_or_id
 from app.db.session import get_db
+from app.models.lesson import LessonProgress
+from app.models.plant import Plant
 from app.models.quiz import QuizAttempt, QuizQuestion
 from app.models.user import Profile
+from app.schemas.plant import plant_read_from_model
+from app.schemas.profile import ProfileRead
 from app.schemas.quiz import QuizAttemptCreate, QuizAttemptRead, QuizQuestionRead
+from app.services.garden_growth import apply_reward
 
 router = APIRouter()
 
@@ -40,5 +47,39 @@ def create_quiz_attempt(
     passed = correct == len(questions)
     attempt = QuizAttempt(user_id=current_profile.id, lesson_id=lesson.id, score=correct, passed=passed)
     db.add(attempt)
+    progress = db.scalar(
+        select(LessonProgress).where(LessonProgress.user_id == current_profile.id, LessonProgress.lesson_id == lesson.id)
+    )
+    now = datetime.now(timezone.utc)
+    if progress is None:
+        progress = LessonProgress(user_id=current_profile.id, lesson_id=lesson.id, completed_at=now)
+        db.add(progress)
+    elif progress.completed_at is None:
+        progress.completed_at = now
+
+    updated_plant = None
+    first_pass = passed and progress.passed_at is None
+    earned = lesson.reward if first_pass else {}
+    if first_pass:
+        progress.passed_at = now
+        plant = db.scalar(select(Plant).where(Plant.user_id == current_profile.id, Plant.type == lesson.category))
+        if plant is None:
+            raise HTTPException(status_code=409, detail="No garden plant is configured for this lesson category")
+        apply_reward(plant, earned)
+        updated_plant = plant
+
     db.commit()
-    return QuizAttemptRead(score=correct, passed=passed, earned=lesson.reward if passed else {})
+    return QuizAttemptRead(
+        score=correct,
+        passed=passed,
+        earned=earned,
+        updated_plant=plant_read_from_model(updated_plant) if updated_plant else None,
+        profile=ProfileRead(
+            id=current_profile.id,
+            display_name=current_profile.display_name,
+            streak_count=current_profile.streak_count,
+            last_activity_date=current_profile.last_activity_date,
+            current_path=current_profile.current_path,
+            garden_visibility=current_profile.garden_visibility,
+        ),
+    )

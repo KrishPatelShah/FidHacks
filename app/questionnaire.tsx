@@ -7,17 +7,30 @@ import { recommendPath } from "@/lib/recommendPath";
 import { useGarden } from "@/state/garden";
 import { colors, shadow } from "@/theme/colors";
 import { RiskProfile } from "@/types/domain";
+import { submitQuestionnaire } from "@/services/api";
 
 export default function QuestionnaireScreen() {
-  const { setRiskProfile } = useGarden();
+  const { setRiskProfile, refreshAccount } = useGarden();
   const [ratings, setRatings] = useState<Record<string, number>>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const path = recommendPath(ratings);
 
-  function handleStart() {
+  async function handleStart() {
+    setSubmitting(true);
+    setError(null);
     const investing = ratings.investingConfidence ?? 0;
     const profile: RiskProfile = investing >= 4 ? "Aggressive" : investing >= 3 ? "Moderate" : "Conservative";
-    setRiskProfile(profile);
-    router.replace("/(tabs)/garden");
+    try {
+      await submitQuestionnaire(ratings);
+      setRiskProfile(profile);
+      await refreshAccount();
+      router.replace("/(tabs)/garden");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not save your answers. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -45,7 +58,8 @@ export default function QuestionnaireScreen() {
         <Text style={styles.recommendationLabel}>Recommended path</Text>
         <Text style={styles.recommendationValue}>{path}</Text>
       </View>
-      <PrimaryButton label="Start My Garden" onPress={handleStart} />
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+      <PrimaryButton label={submitting ? "Saving..." : "Start My Garden"} onPress={handleStart} />
     </ScrollView>
   );
 }
@@ -124,5 +138,10 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "900",
     textTransform: "capitalize"
+  },
+  error: {
+    color: "#B42318",
+    fontSize: 14,
+    lineHeight: 20
   }
 });

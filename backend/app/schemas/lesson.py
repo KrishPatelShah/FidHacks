@@ -14,6 +14,12 @@ class LessonRead(BaseModel):
     reward: dict[str, int]
 
 
+class LessonProgressRead(BaseModel):
+    lesson_id: UUID | str
+    completed: bool
+    passed: bool
+
+
 class LearningModuleRead(BaseModel):
     id: UUID | str
     category: str

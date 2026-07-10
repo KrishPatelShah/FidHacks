@@ -1,17 +1,30 @@
 import { router } from "expo-router";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
 import { PrimaryButton } from "@/components/PrimaryButton";
-import { colors, shadow } from "@/theme/colors";
+import { colors } from "@/theme/colors";
+import { useGarden } from "@/state/garden";
 
 export default function AuthScreen() {
+  const { loginDemo, loadingAccount, accountError } = useGarden();
+  const [error, setError] = useState<string | null>(null);
+
+  async function continueAsDemo() {
+    setError(null);
+    try {
+      await loginDemo();
+      router.replace("/questionnaire");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not sign in. Please try again.");
+    }
+  }
+
   return (
     <View style={styles.screen}>
       <Text style={styles.title}>Save your garden</Text>
-      <Text style={styles.copy}>Use hard-coded demo auth now. Swap these calls for Supabase Auth when keys are configured.</Text>
-      <TextInput autoCapitalize="none" placeholder="Email" style={styles.input} />
-      <TextInput placeholder="Password" secureTextEntry style={styles.input} />
-      <PrimaryButton label="Sign Up / Log In" onPress={() => router.replace("/questionnaire")} />
-      <PrimaryButton label="Continue as Demo User" variant="secondary" onPress={() => router.replace("/questionnaire")} />
+      <Text style={styles.copy}>Continue with the demo account to save your progress securely in your garden.</Text>
+      {error || accountError ? <Text style={styles.error}>{error ?? accountError}</Text> : null}
+      <PrimaryButton label={loadingAccount ? "Connecting..." : "Continue as Demo User"} variant="secondary" onPress={continueAsDemo} />
     </View>
   );
 }
@@ -34,14 +47,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 23
   },
-  input: {
-    backgroundColor: colors.card,
-    borderColor: colors.line,
-    borderRadius: 22,
-    borderWidth: 1,
-    color: colors.darkText,
-    fontSize: 16,
-    padding: 16,
-    ...shadow
+  error: {
+    color: "#B42318",
+    fontSize: 14,
+    lineHeight: 20
   }
 });

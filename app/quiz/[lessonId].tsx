@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { BackButton } from "@/components/BackButton";
 import { FlowerIcon } from "@/components/FlowerIcon";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { findLesson } from "@/data/lessons";
@@ -34,7 +35,9 @@ export default function QuizScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.screen}>
+    <View style={styles.root}>
+      <BackButton />
+      <ScrollView contentContainerStyle={styles.screen}>
       <View style={styles.header}>
         <Text style={styles.eyebrow}>Low-pressure quiz</Text>
         <Text style={styles.title}>Knowledge Check</Text>
@@ -87,11 +90,16 @@ export default function QuizScreen() {
       </View>
 
       <PrimaryButton label={passed ? "Return to Garden" : "Retry Quiz"} onPress={() => (passed ? router.replace("/(tabs)/garden") : retry())} />
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    backgroundColor: colors.cream,
+    flex: 1
+  },
   screen: {
     backgroundColor: colors.cream,
     gap: 16,

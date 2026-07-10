@@ -3,8 +3,22 @@ import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, 
 import { achievementDefs } from "@/data/achievements";
 import { demoPlants } from "@/data/plants";
 import { sampleTransactions } from "@/data/transactions";
-import { applyGardenReward, GardenAction } from "@/lib/gardenGrowth";
-import { Achievement, AchievementMetric, Plant, PlantCategory, RiskProfile, SpendCategory, Transaction, TransactionSource } from "@/types/domain";
+import { applyGardenReward, GARDEN_REWARDS, GardenAction } from "@/lib/gardenGrowth";
+import { fetchPlants, growPlantRemote } from "@/services/api";
+import { clearAssessment } from "@/services/assessmentStorage";
+import {
+  Achievement,
+  AchievementMetric,
+  ConfidenceAssessment,
+  ConfidenceLevel,
+  ParsedReceipt,
+  Plant,
+  PlantCategory,
+  RiskProfile,
+  SpendCategory,
+  Transaction,
+  TransactionSource
+} from "@/types/domain";
 
 const STORAGE_KEY = "financial_garden_state_v2";
 
@@ -16,9 +30,17 @@ type PersistedState = {
   budgetsLogged: number;
   flowersGrown: number;
   investmentsPlanted: number;
+  receiptsScanned: number;
   transactions: Transaction[];
   riskProfile: RiskProfile;
   unlockedAchievements: string[];
+  confidenceAssessment: ConfidenceAssessment | null;
+};
+
+export type ReceiptCommitResult = {
+  added: number;
+  flowerName: string;
+  quantity: number;
 };
 
 export type GrowthResult = {
@@ -31,6 +53,7 @@ export type GrowthResult = {
 
 type GardenContextValue = {
   hydrated: boolean;
+  backendConnected: boolean;
   plants: Plant[];
   streak: number;
   lessonsCompleted: number;
@@ -38,8 +61,11 @@ type GardenContextValue = {
   budgetsLogged: number;
   flowersGrown: number;
   investmentsPlanted: number;
+  receiptsScanned: number;
   transactions: Transaction[];
   riskProfile: RiskProfile;
+  confidenceAssessment: ConfidenceAssessment | null;
+  confidenceLevel: ConfidenceLevel | null;
   totals: { sunlight: number; water: number; fertilizer: number };
   totalFlowers: number;
   unlockedAchievements: string[];
@@ -49,7 +75,9 @@ type GardenContextValue = {
   logBudget: (category?: PlantCategory) => GrowthResult | null;
   plantInvestment: (category: PlantCategory) => GrowthResult | null;
   addTransaction: (input: { merchant: string; amount: number; category: SpendCategory; source: TransactionSource; note?: string }) => void;
+  commitReceipt: (receipt: ParsedReceipt) => ReceiptCommitResult;
   setRiskProfile: (profile: RiskProfile) => void;
+  saveConfidenceAssessment: (assessment: ConfidenceAssessment, profile: RiskProfile) => void;
   dismissCelebration: () => void;
   resetGarden: () => void;
 };
@@ -58,6 +86,23 @@ const GardenContext = createContext<GardenContextValue | null>(null);
 
 function cloneDemo(): Plant[] {
   return demoPlants.map((plant) => ({ ...plant }));
+}
+
+// Merge backend plants over a base set: backend is the source of truth for any
+// plant category it knows about, while base-only categories (e.g. the client's
+// investment flowers, not seeded in the DB) are preserved.
+function mergeBackendPlants(base: Plant[], backend: Plant[]): Plant[] {
+  const byType = new Map(backend.map((plant) => [plant.type, plant]));
+  const merged = base.map((plant) => byType.get(plant.type) ?? plant);
+  for (const plant of backend) {
+    if (!merged.some((p) => p.type === plant.type)) merged.push(plant);
+  }
+  return merged;
+}
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function isBackendId(id: string): boolean {
+  return UUID_RE.test(id);
 }
 
 let localId = 0;
@@ -74,37 +119,61 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   const [budgetsLogged, setBudgetsLogged] = useState(0);
   const [flowersGrown, setFlowersGrown] = useState(0);
   const [investmentsPlanted, setInvestmentsPlanted] = useState(0);
+  const [receiptsScanned, setReceiptsScanned] = useState(0);
   const [transactions, setTransactions] = useState<Transaction[]>(sampleTransactions);
   const [riskProfile, setRiskProfileState] = useState<RiskProfile>("Moderate");
+  const [confidenceAssessment, setConfidenceAssessment] = useState<ConfidenceAssessment | null>(null);
   const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>([]);
   const [celebrationQueue, setCelebrationQueue] = useState<Achievement[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  const [backendConnected, setBackendConnected] = useState(false);
   const hydratedRef = useRef(false);
   const seededRef = useRef(false);
 
   useEffect(() => {
     (async () => {
+      let hadLocalPlants = false;
       try {
         const raw = await AsyncStorage.getItem(STORAGE_KEY);
         if (raw) {
           const parsed = JSON.parse(raw) as Partial<PersistedState>;
-          if (Array.isArray(parsed.plants) && parsed.plants.length) setPlants(parsed.plants);
+          if (Array.isArray(parsed.plants) && parsed.plants.length) {
+            setPlants(parsed.plants);
+            hadLocalPlants = true;
+          }
           if (typeof parsed.streak === "number") setStreak(parsed.streak);
           if (typeof parsed.lessonsCompleted === "number") setLessonsCompleted(parsed.lessonsCompleted);
           if (typeof parsed.quizzesPassed === "number") setQuizzesPassed(parsed.quizzesPassed);
           if (typeof parsed.budgetsLogged === "number") setBudgetsLogged(parsed.budgetsLogged);
           if (typeof parsed.flowersGrown === "number") setFlowersGrown(parsed.flowersGrown);
           if (typeof parsed.investmentsPlanted === "number") setInvestmentsPlanted(parsed.investmentsPlanted);
+          if (typeof parsed.receiptsScanned === "number") setReceiptsScanned(parsed.receiptsScanned);
           if (Array.isArray(parsed.transactions)) setTransactions(parsed.transactions);
           if (parsed.riskProfile) setRiskProfileState(parsed.riskProfile);
+          if (parsed.confidenceAssessment) setConfidenceAssessment(parsed.confidenceAssessment);
           if (Array.isArray(parsed.unlockedAchievements)) setUnlockedAchievements(parsed.unlockedAchievements);
         }
       } catch {
         // Ignore corrupt cache and start from the demo garden.
-      } finally {
-        hydratedRef.current = true;
-        setHydrated(true);
       }
+
+      // Pull the garden from the FastAPI backend (Postgres). On a fresh install
+      // this becomes the source of truth; when local demo progress already
+      // exists we keep it and just mark the backend as connected.
+      try {
+        const backendPlants = await fetchPlants();
+        if (backendPlants && backendPlants.length) {
+          setBackendConnected(true);
+          if (!hadLocalPlants) {
+            setPlants((current) => mergeBackendPlants(current, backendPlants));
+          }
+        }
+      } catch {
+        // Backend offline — the app runs fully on local demo data.
+      }
+
+      hydratedRef.current = true;
+      setHydrated(true);
     })();
   }, []);
 
@@ -118,12 +187,27 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       budgetsLogged,
       flowersGrown,
       investmentsPlanted,
+      receiptsScanned,
       transactions,
       riskProfile,
-      unlockedAchievements
+      unlockedAchievements,
+      confidenceAssessment
     };
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(state)).catch(() => {});
-  }, [plants, streak, lessonsCompleted, quizzesPassed, budgetsLogged, flowersGrown, investmentsPlanted, transactions, riskProfile, unlockedAchievements]);
+  }, [
+    plants,
+    streak,
+    lessonsCompleted,
+    quizzesPassed,
+    budgetsLogged,
+    flowersGrown,
+    investmentsPlanted,
+    receiptsScanned,
+    transactions,
+    riskProfile,
+    unlockedAchievements,
+    confidenceAssessment
+  ]);
 
   const totals = useMemo(
     () =>
@@ -148,9 +232,10 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       budgetsLogged,
       quizzesPassed,
       lessonsCompleted,
-      investmentsPlanted
+      investmentsPlanted,
+      receiptsScanned
     }),
-    [flowersGrown, streak, totalFlowers, budgetsLogged, quizzesPassed, lessonsCompleted, investmentsPlanted]
+    [flowersGrown, streak, totalFlowers, budgetsLogged, quizzesPassed, lessonsCompleted, investmentsPlanted, receiptsScanned]
   );
 
   // Unlock achievements as metrics cross their goals. The first pass after hydration
@@ -170,28 +255,38 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     seededRef.current = true;
   }, [hydrated, metrics]);
 
-  const grow = useCallback((category: PlantCategory, action: GardenAction): GrowthResult | null => {
-    let result: GrowthResult | null = null;
-    setPlants((current) =>
-      current.map((plant) => {
-        if (plant.type !== category) return plant;
-        const before = plant.quantity;
-        const next = applyGardenReward({ ...plant, unlocked: true }, action);
-        result = {
-          flowerName: next.flowerName,
-          category: next.type,
-          earnedFlower: next.quantity > before,
-          quantity: next.quantity,
-          growth: next.growth
-        };
-        return next;
-      })
-    );
-    if (result && (result as GrowthResult).earnedFlower) {
-      setFlowersGrown((count) => count + 1);
-    }
-    return result;
-  }, []);
+  const grow = useCallback(
+    (category: PlantCategory, action: GardenAction): GrowthResult | null => {
+      let result: GrowthResult | null = null;
+      let syncId: string | null = null;
+      setPlants((current) =>
+        current.map((plant) => {
+          if (plant.type !== category) return plant;
+          const before = plant.quantity;
+          const next = applyGardenReward({ ...plant, unlocked: true }, action);
+          result = {
+            flowerName: next.flowerName,
+            category: next.type,
+            earnedFlower: next.quantity > before,
+            quantity: next.quantity,
+            growth: next.growth
+          };
+          if (isBackendId(plant.id)) syncId = plant.id;
+          return next;
+        })
+      );
+      if (result && (result as GrowthResult).earnedFlower) {
+        setFlowersGrown((count) => count + 1);
+      }
+      // Best-effort: persist the reward to Postgres via FastAPI.
+      if (backendConnected && syncId) {
+        const reward = GARDEN_REWARDS[action];
+        growPlantRemote(syncId, { sunlight: reward.sunlight, water: reward.water, fertilizer: reward.fertilizer });
+      }
+      return result;
+    },
+    [backendConnected]
+  );
 
   const completeLesson = useCallback(
     (category: PlantCategory) => {
@@ -241,7 +336,44 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     []
   );
 
+  // Save a scanned receipt: add one transaction per item and reward the garden
+  // with one brand-new budget plant (a fresh sprout), plus bump the receipt count
+  // which unlocks the "First Receipt Sprout!" achievement.
+  const commitReceipt = useCallback((receipt: ParsedReceipt): ReceiptCommitResult => {
+    const now = new Date().toISOString();
+    const newTxns: Transaction[] = receipt.items.map((item, index) => ({
+      id: `${nextId()}_${index}`,
+      merchant: receipt.merchant,
+      amount: item.price,
+      category: item.category,
+      source: "scanned",
+      date: receipt.date ? new Date(receipt.date).toISOString() : now,
+      note: item.name
+    }));
+    setTransactions((current) => [...newTxns, ...current]);
+    setReceiptsScanned((count) => count + 1);
+
+    let flowerName = "Daisy";
+    let quantity = 0;
+    setPlants((current) =>
+      current.map((plant) => {
+        if (plant.type !== "budgeting") return plant;
+        flowerName = plant.flowerName;
+        quantity = plant.quantity + 1;
+        return { ...plant, unlocked: true, quantity, stage: plant.stage + 1, updatedAt: now };
+      })
+    );
+    setFlowersGrown((count) => count + 1);
+
+    return { added: newTxns.length, flowerName, quantity };
+  }, []);
+
   const setRiskProfile = useCallback((profile: RiskProfile) => setRiskProfileState(profile), []);
+
+  const saveConfidenceAssessment = useCallback((assessment: ConfidenceAssessment, profile: RiskProfile) => {
+    setConfidenceAssessment(assessment);
+    setRiskProfileState(profile);
+  }, []);
 
   const dismissCelebration = useCallback(() => setCelebrationQueue((queue) => queue.slice(1)), []);
 
@@ -253,16 +385,20 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     setBudgetsLogged(0);
     setFlowersGrown(0);
     setInvestmentsPlanted(0);
+    setReceiptsScanned(0);
     setTransactions(sampleTransactions);
     setRiskProfileState("Moderate");
+    setConfidenceAssessment(null);
     setUnlockedAchievements([]);
     setCelebrationQueue([]);
     seededRef.current = false;
+    clearAssessment().catch(() => {});
   }, []);
 
   const value = useMemo<GardenContextValue>(
     () => ({
       hydrated,
+      backendConnected,
       plants,
       streak,
       lessonsCompleted,
@@ -270,8 +406,11 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       budgetsLogged,
       flowersGrown,
       investmentsPlanted,
+      receiptsScanned,
       transactions,
       riskProfile,
+      confidenceAssessment,
+      confidenceLevel: confidenceAssessment?.level ?? null,
       totals,
       totalFlowers,
       unlockedAchievements,
@@ -281,12 +420,15 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       logBudget,
       plantInvestment,
       addTransaction,
+      commitReceipt,
       setRiskProfile,
+      saveConfidenceAssessment,
       dismissCelebration,
       resetGarden
     }),
     [
       hydrated,
+      backendConnected,
       plants,
       streak,
       lessonsCompleted,
@@ -294,8 +436,10 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       budgetsLogged,
       flowersGrown,
       investmentsPlanted,
+      receiptsScanned,
       transactions,
       riskProfile,
+      confidenceAssessment,
       totals,
       totalFlowers,
       unlockedAchievements,
@@ -305,7 +449,9 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       logBudget,
       plantInvestment,
       addTransaction,
+      commitReceipt,
       setRiskProfile,
+      saveConfidenceAssessment,
       dismissCelebration,
       resetGarden
     ]

@@ -5,6 +5,7 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SunflowerCompanion } from "@/components/SunflowerCompanion";
 import { askSunflower } from "@/services/ai";
+import { askSunflowerRemote } from "@/services/api";
 import { colors, shadow } from "@/theme/colors";
 
 type Message = {
@@ -33,13 +34,20 @@ export default function SunflowerScreen() {
   const scrollRef = useRef<ScrollView>(null);
   const insets = useSafeAreaInsets();
 
-  function send(text: string) {
+  async function send(text: string) {
     const trimmed = text.trim();
     if (!trimmed) return;
     const userMessage: Message = { id: nextId(), role: "user", text: trimmed };
-    const reply: Message = { id: nextId(), role: "sunflower", text: askSunflower(trimmed) };
-    setMessages((current) => [...current, userMessage, reply]);
+    const replyId = nextId();
+    const pending: Message = { id: replyId, role: "sunflower", text: "…" };
+    setMessages((current) => [...current, userMessage, pending]);
     setDraft("");
+    requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
+
+    // Ask the FastAPI backend first, fall back to the on-device answerer.
+    const remote = await askSunflowerRemote(trimmed);
+    const answer = remote ?? askSunflower(trimmed);
+    setMessages((current) => current.map((message) => (message.id === replyId ? { ...message, text: answer } : message)));
     requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
   }
 

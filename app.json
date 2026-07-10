@@ -11,7 +11,14 @@
     ],
     "plugins": [
       "expo-router",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Financial Garden uses your photos to scan receipts for the budget demo.",
+          "cameraPermission": "Financial Garden uses your camera to scan receipts for the budget demo."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": false

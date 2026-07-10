@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { BackButton } from "@/components/BackButton";
 import { FlowerIcon } from "@/components/FlowerIcon";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { Term } from "@/components/Term";
@@ -28,13 +29,16 @@ export default function LessonScreen() {
   if (!lesson) {
     return (
       <View style={styles.screen}>
+        <BackButton />
         <Text style={styles.title}>Lesson not found</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.screen}>
+    <View style={styles.root}>
+      <BackButton />
+      <ScrollView contentContainerStyle={styles.screen}>
       <View style={styles.hero}>
         <View style={styles.iconWrap}>
           <FlowerIcon name={lesson.category === "credit_debt" ? "Rose" : "Daisy"} size={64} />
@@ -76,11 +80,16 @@ export default function LessonScreen() {
       </View>
 
       <PrimaryButton label="Take Quiz" onPress={handleTakeQuiz} />
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    backgroundColor: colors.cream,
+    flex: 1
+  },
   screen: {
     backgroundColor: colors.cream,
     gap: 16,

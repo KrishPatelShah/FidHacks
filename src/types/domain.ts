@@ -25,6 +25,16 @@ export type Plant = {
   updatedAt: string;
 };
 
+export type ConfidenceLevel = "Beginner" | "Intermediate" | "Advanced";
+
+export type ConfidenceAssessment = {
+  responses: Record<string, number>;
+  totalScore: number;
+  averageScore: number;
+  level: ConfidenceLevel;
+  completedAt: string;
+};
+
 export type UserProfile = {
   id: string;
   displayName: string;
@@ -88,6 +98,19 @@ export type Transaction = {
   note?: string;
 };
 
+export type ParsedReceiptItem = {
+  name: string;
+  price: number;
+  category: SpendCategory;
+};
+
+export type ParsedReceipt = {
+  merchant: string;
+  date: string;
+  total: number;
+  items: ParsedReceiptItem[];
+};
+
 export type RiskProfile = "Conservative" | "Moderate" | "Aggressive";
 
 export type Etf = {
@@ -111,7 +134,8 @@ export type AchievementMetric =
   | "budgetsLogged"
   | "quizzesPassed"
   | "lessonsCompleted"
-  | "investmentsPlanted";
+  | "investmentsPlanted"
+  | "receiptsScanned";
 
 export type Achievement = {
   id: string;

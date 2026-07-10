@@ -17,7 +17,9 @@ export default function ProfileScreen() {
     budgetsLogged,
     flowersGrown,
     investmentsPlanted,
+    receiptsScanned,
     riskProfile,
+    confidenceLevel,
     unlockedAchievements,
     resetGarden
   } = useGarden();
@@ -29,7 +31,8 @@ export default function ProfileScreen() {
     budgetsLogged,
     quizzesPassed,
     lessonsCompleted,
-    investmentsPlanted
+    investmentsPlanted,
+    receiptsScanned
   };
 
   const unlockedCount = unlockedAchievements.length;
@@ -42,7 +45,9 @@ export default function ProfileScreen() {
         </View>
         <View style={styles.headerText}>
           <Text style={styles.title}>Demo Gardener</Text>
-          <Text style={styles.subtitle}>{riskProfile} investor · Friends visibility</Text>
+          <Text style={styles.subtitle}>
+            {confidenceLevel ? `${confidenceLevel} path` : "Path pending"} · {riskProfile} investor
+          </Text>
         </View>
       </View>
 

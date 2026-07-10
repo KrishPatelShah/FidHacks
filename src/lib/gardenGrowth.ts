@@ -2,15 +2,19 @@ import { Plant } from "@/types/domain";
 
 export type GardenAction = "complete_lesson" | "pass_quiz" | "log_budget" | "complete_weekly_challenge" | "finish_module" | "plant_investment";
 
+export type GardenReward = { sunlight?: number; water?: number; fertilizer?: number; growth: number };
+
+export const GARDEN_REWARDS: Record<GardenAction, GardenReward> = {
+  complete_lesson: { sunlight: 1, growth: 20 },
+  pass_quiz: { water: 1, growth: 40 },
+  log_budget: { fertilizer: 1, growth: 25 },
+  complete_weekly_challenge: { sunlight: 1, water: 1, fertilizer: 1, growth: 45 },
+  finish_module: { growth: 100 },
+  plant_investment: { sunlight: 1, water: 1, growth: 55 }
+};
+
 export function applyGardenReward(plant: Plant, action: GardenAction): Plant {
-  const reward = {
-    complete_lesson: { sunlight: 1, growth: 20 },
-    pass_quiz: { water: 1, growth: 40 },
-    log_budget: { fertilizer: 1, growth: 25 },
-    complete_weekly_challenge: { sunlight: 1, water: 1, fertilizer: 1, growth: 45 },
-    finish_module: { growth: 100 },
-    plant_investment: { sunlight: 1, water: 1, growth: 55 }
-  }[action];
+  const reward = GARDEN_REWARDS[action];
 
   const nextGrowth = Math.min(100, plant.growth + reward.growth);
   const earnedFlower = nextGrowth >= 100;

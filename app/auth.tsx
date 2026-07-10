@@ -1,13 +1,15 @@
 import { router } from "expo-router";
 import { StyleSheet, Text, TextInput, View } from "react-native";
+import { BackButton } from "@/components/BackButton";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { colors, shadow } from "@/theme/colors";
 
 export default function AuthScreen() {
   return (
     <View style={styles.screen}>
+      <BackButton />
       <Text style={styles.title}>Save your garden</Text>
-      <Text style={styles.copy}>Use hard-coded demo auth now. Swap these calls for Supabase Auth when keys are configured.</Text>
+      <Text style={styles.copy}>Continue as the demo user — the app signs in to the FastAPI backend automatically.</Text>
       <TextInput autoCapitalize="none" placeholder="Email" style={styles.input} />
       <TextInput placeholder="Password" secureTextEntry style={styles.input} />
       <PrimaryButton label="Sign Up / Log In" onPress={() => router.replace("/questionnaire")} />

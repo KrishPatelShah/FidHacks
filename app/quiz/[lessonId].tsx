@@ -16,6 +16,7 @@ export default function QuizScreen() {
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [result, setResult] = useState<QuizAttemptResult | null>(null);
+  const [moduleCompleted, setModuleCompleted] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +38,8 @@ export default function QuizScreen() {
     try {
       const attempt = await submitQuizAttempt(lessonId, answers);
       setResult(attempt);
-      applyQuizResult(attempt);
+      const outcome = applyQuizResult(attempt, lessonId);
+      setModuleCompleted(outcome.moduleCompleted);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not submit your quiz. Please try again.");
     } finally {
@@ -104,6 +106,16 @@ export default function QuizScreen() {
         );
       })}
 
+      {moduleCompleted ? (
+        <View style={styles.moduleComplete}>
+          <Ionicons color={colors.deepGreen} name="trophy" size={26} />
+          <View style={styles.rewardText}>
+            <Text style={styles.moduleCompleteTitle}>Module complete: {moduleCompleted}!</Text>
+            <Text style={styles.moduleCompleteCopy}>One of every flower just bloomed in your garden.</Text>
+          </View>
+        </View>
+      ) : null}
+
       <View style={styles.reward}>
           <FlowerIcon name={passed ? result?.plant?.flowerName ?? "Daisy" : "Sunflower"} size={54} />
         <View style={styles.rewardText}>
@@ -111,13 +123,13 @@ export default function QuizScreen() {
             {result?.plant && result.plant.quantity > 0
               ? `${result.plant.flowerName} progress saved!`
               : passed
-                ? "Passed: +Water earned"
-                : "Pass to earn water"}
+                ? "Passed: a new flower bloomed"
+                : "Pass to grow a flower"}
           </Text>
           <Text style={styles.rewardCopy}>
-            {result?.plant
-              ? `Your updated garden progress has been saved to the server.`
-              : "Pass to earn a server-verified garden reward."}
+            {passed
+              ? "Your garden progress has been saved."
+              : "Pass this quiz to earn water and grow your garden."}
           </Text>
         </View>
       </View>
@@ -243,6 +255,26 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 12,
     padding: 16
+  },
+  moduleComplete: {
+    alignItems: "center",
+    backgroundColor: "#E8F7F0",
+    borderColor: colors.deepGreen,
+    borderRadius: 26,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 12,
+    padding: 16
+  },
+  moduleCompleteTitle: {
+    color: colors.deepGreen,
+    fontSize: 17,
+    fontWeight: "900"
+  },
+  moduleCompleteCopy: {
+    color: colors.darkText,
+    fontSize: 14,
+    lineHeight: 20
   },
   rewardText: {
     flex: 1,

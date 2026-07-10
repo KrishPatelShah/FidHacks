@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-nati
 import { BackButton } from "@/components/BackButton";
 import { FlowerIcon } from "@/components/FlowerIcon";
 import { learningModules } from "@/data/lessons";
+import { useGarden } from "@/state/garden";
 import { colors, shadow } from "@/theme/colors";
 
 // Flower + accent shown per module category, matching the Learn screen cards.
@@ -23,6 +24,7 @@ const difficultyLabel: Record<string, string> = {
 
 export default function ModuleScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { completedLessonIds, completedModuleIds } = useGarden();
   const module = learningModules.find((item) => item.id === id);
 
   if (!module) {
@@ -38,6 +40,9 @@ export default function ModuleScreen() {
 
   const style = categoryStyle[module.category] ?? categoryStyle.budgeting;
   const totalLessons = module.lessons.length;
+  const doneLessons = module.lessons.filter((lesson) => completedLessonIds.includes(lesson.id)).length;
+  const moduleDone = completedModuleIds.includes(module.id);
+  const progress = totalLessons > 0 ? doneLessons / totalLessons : 0;
 
   return (
     <View style={styles.root}>
@@ -49,24 +54,43 @@ export default function ModuleScreen() {
           </View>
           <Text style={styles.kicker}>{module.flowerName}</Text>
           <Text style={styles.title}>{module.title}</Text>
-          <Text style={styles.meta}>{totalLessons} lessons · complete each to grow your garden</Text>
+          <Text style={styles.meta}>
+            {doneLessons} of {totalLessons} lessons complete
+          </Text>
+          <View style={styles.progressTrack}>
+            <View style={[styles.progressFill, { width: `${Math.round(progress * 100)}%`, backgroundColor: style.accent }]} />
+          </View>
+          <Text style={styles.bonusHint}>
+            {moduleDone
+              ? "Module complete! One of every flower bloomed in your garden."
+              : "Finish every lesson to bloom one of each flower in your garden."}
+          </Text>
         </View>
 
-        {module.lessons.map((lesson, index) => (
-          <Link key={lesson.id} href={`/lesson/${lesson.id}`} asChild>
-            <TouchableOpacity style={styles.lessonCard}>
-              <View style={[styles.lessonNumber, { backgroundColor: `${style.accent}22` }]}>
-                <Text style={[styles.lessonNumberText, { color: style.accent }]}>{index + 1}</Text>
-              </View>
-              <View style={styles.lessonBody}>
-                <Text style={styles.lessonTitle}>{lesson.title}</Text>
-                <Text style={styles.lessonSummary} numberOfLines={2}>{lesson.summary}</Text>
-                <Text style={styles.lessonDifficulty}>{difficultyLabel[lesson.difficulty] ?? lesson.difficulty}</Text>
-              </View>
-              <Ionicons color={colors.mutedText} name="chevron-forward" size={20} />
-            </TouchableOpacity>
-          </Link>
-        ))}
+        {module.lessons.map((lesson, index) => {
+          const done = completedLessonIds.includes(lesson.id);
+          return (
+            <Link key={lesson.id} href={`/lesson/${lesson.id}`} asChild>
+              <TouchableOpacity style={styles.lessonCard}>
+                <View style={[styles.lessonNumber, { backgroundColor: done ? "#E8F7F0" : `${style.accent}22` }]}>
+                  {done ? (
+                    <Ionicons color={colors.deepGreen} name="checkmark" size={20} />
+                  ) : (
+                    <Text style={[styles.lessonNumberText, { color: style.accent }]}>{index + 1}</Text>
+                  )}
+                </View>
+                <View style={styles.lessonBody}>
+                  <Text style={styles.lessonTitle}>{lesson.title}</Text>
+                  <Text style={styles.lessonSummary} numberOfLines={2}>{lesson.summary}</Text>
+                  <Text style={[styles.lessonDifficulty, done && { color: colors.deepGreen }]}>
+                    {done ? "Completed" : difficultyLabel[lesson.difficulty] ?? lesson.difficulty}
+                  </Text>
+                </View>
+                <Ionicons color={colors.mutedText} name="chevron-forward" size={20} />
+              </TouchableOpacity>
+            </Link>
+          );
+        })}
       </ScrollView>
     </View>
   );
@@ -117,6 +141,24 @@ const styles = StyleSheet.create({
     color: colors.mutedText,
     fontSize: 14,
     fontWeight: "700"
+  },
+  progressTrack: {
+    alignSelf: "stretch",
+    backgroundColor: "#EADCC0",
+    borderRadius: 999,
+    height: 8,
+    marginTop: 2,
+    overflow: "hidden"
+  },
+  progressFill: {
+    borderRadius: 999,
+    height: "100%"
+  },
+  bonusHint: {
+    color: colors.deepGreen,
+    fontSize: 13,
+    fontWeight: "800",
+    lineHeight: 18
   },
   lessonCard: {
     alignItems: "center",

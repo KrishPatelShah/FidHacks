@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { useMemo, useState } from "react";
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { PieChart } from "react-native-gifted-charts";
 import { FlowerIcon } from "@/components/FlowerIcon";
 import { ReceiptReviewModal } from "@/components/ReceiptReviewModal";
@@ -56,7 +56,7 @@ function formatMoneyExact(amount: number) {
 }
 
 export default function BudgetScreen() {
-  const { transactions, addTransaction, logBudget, commitReceipt } = useGarden();
+  const { transactions, addTransaction, logBudget, commitReceipt, receiptsScanned } = useGarden();
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const [scanning, setScanning] = useState(false);
@@ -168,8 +168,12 @@ export default function BudgetScreen() {
     setReviewOpen(false);
     setParsed(null);
     setPickedImage(null);
-    setSavedNote(`First Receipt Sprout! Added ${result.added} items from ${receipt.merchant}, a new ${result.flowerName} grew in your garden.`);
+    const prefix = receiptsScanned === 0 ? "First Receipt Sprout! " : "";
+    setSavedNote(`${prefix}Added ${result.added} items from ${receipt.merchant}, a new ${result.flowerName} grew in your garden.`);
   }
+
+  const manualAmount = Number(draftAmount.replace(/[^0-9.]/g, ""));
+  const manualValid = draftMerchant.trim().length > 0 && Number.isFinite(manualAmount) && manualAmount > 0;
 
   function handleManualSave() {
     const amount = Number(draftAmount.replace(/[^0-9.]/g, ""));
@@ -213,13 +217,28 @@ export default function BudgetScreen() {
       </View>
 
       <View style={styles.actionRow}>
-        <TouchableOpacity onPress={() => setChooserOpen(true)} style={[styles.actionButton, styles.primaryAction]} disabled={scanning}>
-          <Ionicons color={colors.white} name="scan" size={20} />
-          <Text style={styles.primaryActionText}>{scanning ? "Scanning…" : "Scan Receipt"}</Text>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => setChooserOpen(true)}
+          style={[styles.actionButton, styles.primaryAction, scanning && styles.actionDisabled]}
+          disabled={scanning}
+        >
+          {scanning ? (
+            <ActivityIndicator color={colors.white} size="small" />
+          ) : (
+            <Ionicons color={colors.white} name="scan" size={20} />
+          )}
+          <Text style={styles.primaryActionText} numberOfLines={1}>
+            {scanning ? "Scanning…" : "Scan Receipt"}
+          </Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => setManualOpen(true)} style={[styles.actionButton, styles.secondaryAction]}>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => setManualOpen(true)}
+          style={[styles.actionButton, styles.secondaryAction]}
+        >
           <Ionicons color={colors.deepGreen} name="create" size={20} />
-          <Text style={styles.secondaryActionText}>Manual Entry</Text>
+          <Text style={styles.secondaryActionText} numberOfLines={1}>Manual Entry</Text>
         </TouchableOpacity>
       </View>
 
@@ -227,6 +246,9 @@ export default function BudgetScreen() {
         <View style={styles.savedCard}>
           <Ionicons color={colors.deepGreen} name="leaf" size={18} />
           <Text style={styles.savedText}>{savedNote}</Text>
+          <Pressable hitSlop={8} onPress={() => setSavedNote(null)}>
+            <Ionicons color={colors.mutedText} name="close" size={18} />
+          </Pressable>
         </View>
       ) : null}
 
@@ -420,7 +442,8 @@ export default function BudgetScreen() {
       />
 
       <Modal transparent animationType="slide" visible={manualOpen} onRequestClose={() => setManualOpen(false)}>
-        <View style={styles.manualBackdrop}>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.manualBackdrop}>
+          <Pressable style={styles.manualDismissArea} onPress={() => setManualOpen(false)} />
           <View style={styles.manualCard}>
             <View style={styles.manualHeader}>
               <Text style={styles.manualTitle}>Add a purchase</Text>
@@ -440,11 +463,16 @@ export default function BudgetScreen() {
                 </TouchableOpacity>
               ))}
             </View>
-            <TouchableOpacity onPress={handleManualSave} style={styles.manualSave}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              disabled={!manualValid}
+              onPress={handleManualSave}
+              style={[styles.manualSave, !manualValid && styles.actionDisabled]}
+            >
               <Text style={styles.manualSaveText}>Add purchase</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </ScrollView>
   );
@@ -782,6 +810,9 @@ const styles = StyleSheet.create({
   primaryAction: {
     backgroundColor: colors.deepGreen
   },
+  actionDisabled: {
+    opacity: 0.6
+  },
   primaryActionText: {
     color: colors.white,
     fontSize: 15,
@@ -1023,6 +1054,9 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(15, 61, 48, 0.5)",
     flex: 1,
     justifyContent: "flex-end"
+  },
+  manualDismissArea: {
+    flex: 1
   },
   manualCard: {
     backgroundColor: colors.cream,

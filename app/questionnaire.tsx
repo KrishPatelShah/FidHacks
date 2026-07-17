@@ -24,7 +24,10 @@ const LIKERT = [1, 2, 3, 4, 5] as const;
 
 export default function QuestionnaireScreen() {
   const { saveConfidenceAssessment, setExperienceLevel, startFreshGarden } = useGarden();
-  const [responses, setResponses] = useState<Record<string, number>>({});
+  // Demo: preselect every question with a 4 or 5 so the flow is ready to submit.
+  const [responses, setResponses] = useState<Record<string, number>>(() =>
+    Object.fromEntries(assessmentQuestions.map((question) => [question.id, Math.random() < 0.5 ? 4 : 5]))
+  );
   const [result, setResult] = useState<ConfidenceAssessment | null>(null);
   const [saving, setSaving] = useState(false);
 

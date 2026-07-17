@@ -40,7 +40,7 @@
     "expo-font": "~12.0.10",
     "@expo/vector-icons": "14.0.4"
   },
-  "description": "Flourish is a gamified financial literacy app that helps users build better money habits by growing a virtual garden. Instead of making finance feel intimidating, the app turns learning, budgeting, quizzes, and reflection into visible progress.",
+  "description": "1st Place Winner at FidHacks. Flourish is a gamified financial literacy app that helps users build better money habits by growing a virtual garden. Instead of making finance feel intimidating, the app turns learning, budgeting, quizzes, and reflection into visible progress.",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/KrishPatelShah/FidHacks.git"

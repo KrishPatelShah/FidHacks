@@ -1,5 +1,7 @@
 # Flourish
 
+**1st Place Winner at FidHacks**
+
 Flourish is a gamified financial literacy app that helps users build better money habits by growing a virtual garden. Instead of making finance feel intimidating, the app turns learning, budgeting, quizzes, and reflection into visible progress.
 
 The garden rewards consistency and learning, not wealth.
